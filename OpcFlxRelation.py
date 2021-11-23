@@ -1,34 +1,31 @@
 # Abstract
 class OpcFlxRelation:
     def __init__(self):
+
+        self.l_flx = []
         self.d_flx_opc = {}
+        self.exe_flx = "felixcore"
+
+        self.l_opc = []
         self.d_opc_flx = {}
         self.d_opc_port = {}
-
+        self.d_opc_command = {}
 
     def return_list_opc(self):
-        la, lc = [], []
-        for i in self.d_opc_flx:
-            if "A" in i:
-                la.append(i)
-            if "C" in i:
-                lc.append(i)
-        return [la, lc]
+        return self.l_opc
 
     def return_list_flx(self,):
         """
         return a list of flx server that is used, ordered in sector order
         """
-        l = [set(), set()]
-        for sector in sorted(self.d_opc_flx):
-            flx = self.d_opc_flx[sector][0]
-            if "A" in sector:
-                l[0].add(flx)
-            if "C" in sector:
-                l[1].add(flx)
-        return sorted(l[0]), sorted(l[1])
+        #  l = []
+        #  for sector in self.d_opc_flx:
+            #  flx = self.d_opc_flx[sector][0]
+            #  if flx in l: continue
+            #  l.add(flx)
+        return self.l_flx
 
-    def opc_flx(self, opc, l_flx, port = 48020):
+    def add_opc_flx(self, opc, l_flx, port = 48020):
         """
         set up how an opc(sector) is relied on an felix.
             the first element is where the opc server will be run
@@ -39,6 +36,9 @@ class OpcFlxRelation:
 
         killing the corresponding felix will kill all related opc
         """
+        self.l_opc.append(opc)
+        if l_flx[0] not in self.l_flx:
+            self.l_flx.append(l_flx[0])
         self.d_opc_flx[opc] = l_flx
         for flx in l_flx:
             if flx not in self.d_flx_opc:
@@ -76,12 +76,12 @@ class OpcFlxRelation:
 
 if __name__ == "__main__":
     a = OpcFlxRelationship()
-    a.opc_flx(1, ["flx1"])
-    a.opc_flx(2, ["flx1"])
-    a.opc_flx(3, ["flx1", "flx2"])
-    a.opc_flx(4, ["flx2"])
-    a.opc_flx(5, ["flx2"])
-    a.opc_flx(6, ["flx3", "flx2"])
-    a.opc_flx(7, ["flx3"])
-    a.opc_flx(8, ["flx3"])
+    a.add_opc_flx(1, ["flx1"])
+    a.add_opc_flx(2, ["flx1"])
+    a.add_opc_flx(3, ["flx1", "flx2"])
+    a.add_opc_flx(4, ["flx2"])
+    a.add_opc_flx(5, ["flx2"])
+    a.add_opc_flx(6, ["flx3", "flx2"])
+    a.add_opc_flx(7, ["flx3"])
+    a.add_opc_flx(8, ["flx3"])
     print(a.kill_chain_flx("flx1"))

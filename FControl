@@ -3,7 +3,8 @@
 import sys, string, random, os, fileinput
 
 from PyQt5.QtWidgets import QApplication
-from PyQt5 import  QtCore
+from PyQt5 import QtCore
+from PyQt5 import QtGui
 
 from MainWindow import MainWindow
 
@@ -23,25 +24,32 @@ class Execute(QApplication):
         # Esc to close
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Escape:
-                self.quit()
+                #  print(target, event)
+                self._win.closeEvent(event)
                 return True
         return super(QApplication, self).eventFilter(target, event)
 
-
-    def quit(self):
-        print("FControl exiting gracefully")
-        self._win.quit()
+    #  def quit(self):
+        #  print("app quit")
+        #  #  self._win.quit()
+        #  #  self._win = ""
+        #  QApplication.quit()
+        #  pass
+        #  self._win.closeEvent()
 
 if __name__ == '__main__':
     app = Execute(sys.argv)
+
     def sigint_handler(*args):
+        print()
         print("Ctrl+C or Ctrl+/ pressed") 
-        app.quit()
+        QtCore.QCoreApplication.sendEvent(app, QtGui.QCloseEvent())
         pass
+
     signal.signal(signal.SIGINT, sigint_handler)
     signal.signal(signal.SIGQUIT, sigint_handler)
     timer = QtCore.QTimer()
     timer.start(100)
     timer.timeout.connect(lambda: None)
-    sys.exit(app.exec_())
+    i = app.exec_()
     pass

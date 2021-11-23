@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import  QTabWidget, QMainWindow, qApp
+from PyQt5.QtWidgets import  QTabWidget, QMainWindow, QApplication
 from PyQt5 import  QtCore
 
 from CtrlPanel import CtrlPanel
@@ -17,14 +17,15 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.MMA, "MM-A")
 
         self.MMC = CtrlPanel("MM", 1)
-        self.tabs.addTab(self.MMC, "MM-C")
+        #  self.tabs.addTab(self.MMC, "MM-C")
 
         self.sTGCA = CtrlPanel("sTGC")
         self.tabs.addTab(self.sTGCA, "sTGC-A")
 
         self.sTGCC = CtrlPanel("sTGC", 1)
-        self.tabs.addTab(self.sTGCC, "sTGC-C")
+        #  self.tabs.addTab(self.sTGCC, "sTGC-C")
 
+        #  QtCore.QCoreApplication.instance().installEventFilter(self)
         self.show()
         pass
 
@@ -32,16 +33,18 @@ class MainWindow(QMainWindow):
         #  # Esc to close
         #  if event.type() == QtCore.QEvent.KeyPress:
             #  if event.key() == QtCore.Qt.Key_Escape:
-                #  self.exit_sequence()
-
+                #  self.quit()
         #  return super(MainWindow, self).eventFilter(target, event)
 
-
-    def quit(self, ):
+    def closeEvent(self, event):
+        print("FControl exiting gracefully")
         self.MMA.quit()
         self.MMC.quit()
         self.sTGCA.quit()
         self.sTGCC.quit()
-        self.close()
+        event.accept()
+        QApplication.quit()
+        # TODO: can ask if yes or not!
+        #  return True
 
     pass

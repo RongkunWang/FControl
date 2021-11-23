@@ -3,24 +3,30 @@ from functools import partial
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import (QWidget, QPushButton, QGridLayout, QSizePolicy,
-        QCheckBox)
+        QCheckBox, QSpacerItem)
 
-import db
+import db, os
 from OpcFlxRelation import OpcFlxRelation
+from CommandSender import CommandSender
 
+USER = os.environ["USER"]
 
 class CtrlPanel(QWidget, OpcFlxRelation):
     def __init__(self, det = "MM", side = 0):
+        sside = "C" if side else "A"
         QWidget.__init__(self)
         OpcFlxRelation.__init__(self)
 
-        self.ncolflx = 3
-        self.ncolopc = 3
+        self.cs = CommandSender(f"/tmp/rowang/{det}-{sside}")
+
+        self.ncolflx = 4
+        self.ncolopc = 4
         self.ncol = self.ncolflx + self.ncolopc  
 
-        self.l_flx_cb     = []
-        self.l_flx_but    = []
-        self.l_flxlog_but = []
+        self.l_flx_cb      = []
+        self.l_flx_run_but = {}
+        self.l_flx_stp_but = {}
+        self.l_flxlog_but  = []
 
         self.l_opc_cb     = []
         self.l_opc_but    = []
@@ -29,37 +35,54 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
 
         for sector, l_flx in db.flx_dict[det].items():
-            self.opc_flx(sector, l_flx, db.port_dict[det][sector])
+            if (side == 0 and "C" in sector) or (side == 1 and "A" in sector):
+                continue
+            self.add_opc_flx(sector, l_flx, db.port_dict[det][sector])
 
         # global buttons
         self.layout_main = QGridLayout(self)
-        self.but_init_all = QPushButton("flx-init all felix")
-        self.layout_main.addWidget(self.but_init_all, 0, 0, 1, 1)
-        self.but_restart_failed = QPushButton("Restart Failed Servers")
-        self.layout_main.addWidget(self.but_restart_failed, 0, 1, 1, 1)
-        self.but_clear_cache = QPushButton("Clear Cache(potentially large!)")
-        self.layout_main.addWidget(self.but_clear_cache, 0, 5, 1, 1)
-
-        self.cb_all_flx = QCheckBox("All felix")
-        self.layout_main.addWidget(self.cb_all_flx, 1, 0, 1, 1)
-        self.but_start_all_selected_flx = QPushButton("Start checked felixcore")
-        self.layout_main.addWidget(self.but_start_all_selected_flx, 1, 1, 1, 1)
-        self.but_stop_all_selected_flx = QPushButton("Stop checked felixcore")
-        self.layout_main.addWidget(self.but_stop_all_selected_flx, 1, 2, 1, 1)
-
-        self.cb_all_opc = QCheckBox("All opc")
-        self.layout_main.addWidget(self.cb_all_opc, 1, self.ncolflx, 1, 1)
-        self.but_start_all_selected_opc = QPushButton("Start checked opc")
-        self.layout_main.addWidget(self.but_start_all_selected_opc, 1, self.ncolflx + 1, 1, 1)
-        self.but_stop_all_selected_opc = QPushButton("Stop checked opc")
-        self.layout_main.addWidget(self.but_stop_all_selected_opc, 1, self.ncolflx + 2, 1, 1)
-
-        # individual buttons
         self.layout_but = QGridLayout()
         self.layout_main.addLayout(self.layout_but, 2, 0, 1, self.ncol)
 
-        nrow = 0
-        for i, flx in enumerate(self.return_list_flx()[side]):
+        self.but_init_all = QPushButton("flx-init all felix")
+        self.but_init_all.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_main.addWidget(self.but_init_all, 0, 0, 1, 1)
+        self.but_restart_failed = QPushButton("Restart Failed Servers")
+        self.but_restart_failed.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_main.addWidget(self.but_restart_failed, 0, 1, 1, 1)
+        self.but_clear_cache = QPushButton("Clear Cache(potentially large!)")
+        self.but_clear_cache.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_main.addWidget(self.but_clear_cache, 0, self.ncol - 1, 1, 1)
+
+        self.cb_all_flx = QCheckBox("All felix")
+        self.cb_all_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_but.addWidget(self.cb_all_flx, 0, 0, 1, 1)
+        self.but_start_all_selected_flx = QPushButton("Start checked felixcore")
+        self.but_start_all_selected_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_but.addWidget(self.but_start_all_selected_flx, 0, 1, 1, 1)
+        self.but_stop_all_selected_flx = QPushButton("Stop checked felixcore")
+        self.but_stop_all_selected_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_but.addWidget(self.but_stop_all_selected_flx, 0, 2, 1, 1)
+        #  self.layout_but.addItem(QSpacerItem(1, 1, 
+            #  QSizePolicy.Expanding, 
+            #  QSizePolicy.Fixed), 1, 3, 1, 1)
+
+
+        self.cb_all_opc = QCheckBox("All opc")
+        self.cb_all_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_but.addWidget(self.cb_all_opc, 0, self.ncolflx, 1, 1)
+        self.but_start_all_selected_opc = QPushButton("Start checked opc")
+        self.but_start_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_but.addWidget(self.but_start_all_selected_opc, 0, self.ncolflx + 1, 1, 1)
+        self.but_stop_all_selected_opc = QPushButton("Stop checked opc")
+        self.but_stop_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_but.addWidget(self.but_stop_all_selected_opc, 0, self.ncolflx + 2, 1, 1)
+        #  self.layout_but.setColumnStretch(self.ncolflx + 3, 1)
+
+        # individual buttons
+
+        nrow = 1
+        for flx in self.return_list_flx():
             rowspan = len(self.kill_chain_flx(flx)[1])
 
             # checkbox for run all
@@ -72,23 +95,29 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             # this button is for running server(individually)
             but = QPushButton(self)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-            self.l_flx_but.append( but )
+            self.l_flx_run_but[flx] =  but 
             but.setText("run server")
             but.setObjectName(flx)
-            self.layout_but.addWidget( self.l_flx_but[-1], nrow, 1, rowspan, 1)
+            self.layout_but.addWidget( self.l_flx_run_but[flx], nrow, 1, rowspan, 1)
+
+            but = QPushButton("stop server")
+            but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.l_flx_stp_but[flx] =  but 
+            but.setObjectName(flx)
+            self.layout_but.addWidget( self.l_flx_stp_but[flx], nrow, 2, rowspan, 1)
 
             # this button is for checking log(individually)
             but = QPushButton(self)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_flxlog_but.append( but )
-            but.setText("Check Log")
+            but.setText("check log")
             but.setObjectName(flx)
-            self.layout_but.addWidget( self.l_flxlog_but[-1], nrow, 2, rowspan, 1)
+            self.layout_but.addWidget( self.l_flxlog_but[-1], nrow, 3, rowspan, 1)
 
             nrow += rowspan
 
-        nrow = 0
-        for i, sector in enumerate(self.return_list_opc()[side]):
+        nrow = 1
+        for sector in self.return_list_opc():
             rowspan = len(self.d_opc_flx[sector])
 
             cb = QCheckBox("Opc " + sector)
@@ -99,17 +128,24 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
             but = QPushButton(self)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-            but.setText("Run Server")
+            but.setText("run server")
             but.setObjectName(sector)
             self.l_opc_but.append( but )
             self.layout_but.addWidget( self.l_opc_but[-1], nrow, self.ncolflx + 1, rowspan, 1)
 
+
+            but = QPushButton("stop server")
+            but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            but.setObjectName(sector)
+            self.l_opc_but.append( but )
+            self.layout_but.addWidget( self.l_opc_but[-1], nrow, self.ncolflx + 2, rowspan, 1)
+
             but = QPushButton(self)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-            but.setText("Check Log")
+            but.setText("check log")
             but.setObjectName(sector)
             self.l_opclog_but.append( but )
-            self.layout_but.addWidget( self.l_opclog_but[-1], nrow, self.ncolflx + 2, rowspan, 1)
+            self.layout_but.addWidget( self.l_opclog_but[-1], nrow, self.ncolflx + 3, rowspan, 1)
 
 
             nrow += rowspan
@@ -121,7 +157,35 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
     def set_signal(self):
         self.set_cb_relationship()
+        self.set_button()
         pass
+
+    def set_button(self,):
+        for flx_host, b in self.l_flx_run_but.items():
+            b.clicked.connect(partial(self.run_flx_server, flx_host))
+            pass
+
+        for flx_host, b in self.l_flx_stp_but.items():
+            b.clicked.connect(partial(self.stop_flx_server, flx_host))
+            b.setEnabled(False)
+            pass
+        pass
+
+    @QtCore.pyqtSlot(str)
+    def run_flx_server(self, flx_host):
+        self.l_flx_stp_but[flx_host].setEnabled(True)
+        self.l_flx_run_but[flx_host].setEnabled(False)
+        self.cs.send_command(flx_host, flx_host, 
+                f"ssh -t {flx_host} '{db.FLX_SETUP} && {self.exe_flx} {db.flx_arg[flx_host]}'")
+        pass
+
+    @QtCore.pyqtSlot(str)
+    def stop_flx_server(self, flx_host):
+        self.l_flx_stp_but[flx_host].setEnabled(False)
+        self.l_flx_run_but[flx_host].setEnabled(True)
+        self.cs.stop_command(flx_host)
+        pass
+
 
     def set_cb_relationship(self,):
         self.cb_all_flx.stateChanged.connect(partial(self.toggle_checkbox, self.l_flx_cb))
@@ -163,6 +227,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         pass
 
     def quit(self):
+        self.cs.stop_all()
         pass
 
     pass
