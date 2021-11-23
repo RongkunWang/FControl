@@ -26,6 +26,7 @@ class Execute(QApplication):
             if event.key() == QtCore.Qt.Key_Escape:
                 #  print(target, event)
                 self._win.closeEvent(event)
+                # TODO: can be done better?
                 return True
         return super(QApplication, self).eventFilter(target, event)
 
@@ -42,14 +43,19 @@ if __name__ == '__main__':
 
     def sigint_handler(*args):
         print()
-        print("Ctrl+C or Ctrl+/ pressed") 
-        QtCore.QCoreApplication.sendEvent(app, QtGui.QCloseEvent())
+        print("Ctrl+C pressed, do nothing") 
+        pass
+    def sigquit_handler(*args):
+        print()
+        print("Press Ctrl+\, do nothing")
+        #  print("Press Ctrl+/, send killing signal")
+        #  QtCore.QCoreApplication.sendEvent(app, QtGui.QCloseEvent())
         pass
 
-    signal.signal(signal.SIGINT, sigint_handler)
-    signal.signal(signal.SIGQUIT, sigint_handler)
+    signal.signal(signal.SIGINT,  sigint_handler)
+    signal.signal(signal.SIGQUIT, sigquit_handler)
     timer = QtCore.QTimer()
     timer.start(100)
     timer.timeout.connect(lambda: None)
-    i = app.exec_()
+    sys.exit(app.exec_())
     pass

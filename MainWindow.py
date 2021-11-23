@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import  QTabWidget, QMainWindow, QApplication
 from PyQt5 import  QtCore
 
 from CtrlPanel import CtrlPanel
-from sTGC import sTGC
 
 class MainWindow(QMainWindow):
     def __init__(self):

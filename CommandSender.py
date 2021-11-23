@@ -1,4 +1,4 @@
-import subprocess
+import subprocess, signal
 import os
 import pathlib
 
@@ -12,17 +12,30 @@ class CommandSender:
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
         pass
 
-    def send_command(self, name, log_file, cmd):
+    def send_command(self, name, log_file, host, cmd):
+        def preexec_function():
+            #  signal.signal(signal.SIGINT,  signal.SIG_IGN)
+            signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+            signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+            pass
+
         self.d_log_file[name] = open(os.path.join(self.log_dir, log_file), "w")
-        job = subprocess.Popen(cmd, 
+        job = subprocess.Popen(f"ssh -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\"", 
+        #  job = subprocess.Popen(f"ssh -t {host} \" {cmd}\"", 
                 stdout = self.d_log_file[name], 
                 stderr = self.d_log_file[name], 
-                bufsize = 1, universal_newlines = True, shell = True)
+                preexec_fn = preexec_function,
+                bufsize = 1, universal_newlines = True, 
+                shell = True)
+                #  )
         self.d_running_command[name] = job
         pass
 
     def stop_command(self, name):
-        self.d_running_command[name].terminate()
+        print("stopping command", name)
+        #  self.d_running_command[name].terminate()
+        self.d_running_command[name].send_signal(signal.SIGINT)
+        self.d_running_command[name].wait()
         self.d_log_file[name].close()
 
         del self.d_running_command[name]

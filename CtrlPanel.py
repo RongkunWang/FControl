@@ -175,8 +175,8 @@ class CtrlPanel(QWidget, OpcFlxRelation):
     def run_flx_server(self, flx_host):
         self.l_flx_stp_but[flx_host].setEnabled(True)
         self.l_flx_run_but[flx_host].setEnabled(False)
-        self.cs.send_command(flx_host, flx_host, 
-                f"ssh -t {flx_host} '{db.FLX_SETUP} && {self.exe_flx} {db.flx_arg[flx_host]}'")
+        self.cs.send_command(flx_host, flx_host, flx_host,
+                f"{db.FLX_SETUP} && {self.exe_flx} {db.flx_arg[flx_host]}")
         pass
 
     @QtCore.pyqtSlot(str)
