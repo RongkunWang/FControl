@@ -6,6 +6,8 @@ from CtrlPanel import CtrlPanel
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
+
+
         self.setWindowTitle("FControl")
         self.resize(1400, 900)
 
@@ -24,16 +26,9 @@ class MainWindow(QMainWindow):
         self.sTGCC = CtrlPanel("sTGC", 1)
         #  self.tabs.addTab(self.sTGCC, "sTGC-C")
 
-        #  QtCore.QCoreApplication.instance().installEventFilter(self)
         self.show()
         pass
 
-    #  def eventFilter(self, target, event):
-        #  # Esc to close
-        #  if event.type() == QtCore.QEvent.KeyPress:
-            #  if event.key() == QtCore.Qt.Key_Escape:
-                #  self.quit()
-        #  return super(MainWindow, self).eventFilter(target, event)
 
     def closeEvent(self, event):
         print("FControl exiting gracefully")
@@ -45,5 +40,4 @@ class MainWindow(QMainWindow):
         QApplication.quit()
         # TODO: can ask if yes or not!
         #  return True
-
     pass

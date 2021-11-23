@@ -15,6 +15,8 @@ flx_dict["sTGC"] = {}
 port_dict["sTGC"] = {}
 
 FLX_SETUP = "source /sw/atlas/felix/felix-04-02-00-b4-stand-alone/x86_64-centos7-gcc8-opt/setup.sh"
+FLX_EXE = "felixcore"
+OPC_EXE = "/det/dcs/Production/ScaOpcUa/bin/OpcUaScaServer"
 
 # TODO: felix-id
 # TODO: interface configurable
@@ -109,3 +111,7 @@ opc_dict["MM"]["A13"] = OPC_STGC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-06_ST
 opc_dict["MM"]["A14"] = OPC_STGC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-06_STG_A14_OLDNAMING.xml"
 opc_dict["MM"]["A15"] = OPC_STGC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-07_STG_A15_OLDNAMING.xml"
 opc_dict["MM"]["A16"] = OPC_STGC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-07_STG_A16_OLDNAMING.xml"
+
+
+def OpcPort(port):
+    return f"--opcua_backend_config /det/dcs/Development/ATLAS_DCS_MUO/muoNswEltxScaOpcConfigTemplates/ServerConfig_{port}.xml"

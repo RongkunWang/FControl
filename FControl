@@ -4,7 +4,6 @@ import sys, string, random, os, fileinput
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import QtCore
-from PyQt5 import QtGui
 
 from MainWindow import MainWindow
 
@@ -42,14 +41,10 @@ if __name__ == '__main__':
     app = Execute(sys.argv)
 
     def sigint_handler(*args):
-        print()
-        print("Ctrl+C pressed, do nothing") 
+        print("\nCtrl+C pressed, do nothing") 
         pass
     def sigquit_handler(*args):
-        print()
-        print("Press Ctrl+\, do nothing")
-        #  print("Press Ctrl+/, send killing signal")
-        #  QtCore.QCoreApplication.sendEvent(app, QtGui.QCloseEvent())
+        print("\nPress Ctrl+\, do nothing")
         pass
 
     signal.signal(signal.SIGINT,  sigint_handler)

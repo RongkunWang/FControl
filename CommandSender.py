@@ -1,6 +1,7 @@
 import subprocess, signal
 import os
 import pathlib
+import time
 
 USER = os.environ["USER"]
 
@@ -19,20 +20,23 @@ class CommandSender:
             signal.signal(signal.SIGQUIT, signal.SIG_IGN)
             pass
 
+        print("\nstarting command", name, cmd)
+
         self.d_log_file[name] = open(os.path.join(self.log_dir, log_file), "w")
-        job = subprocess.Popen(f"ssh -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\"", 
-        #  job = subprocess.Popen(f"ssh -t {host} \" {cmd}\"", 
+        job = subprocess.Popen(f"ssh -o StrictHostKeyChecking=no -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\"", 
                 stdout = self.d_log_file[name], 
                 stderr = self.d_log_file[name], 
+                stdin  = subprocess.PIPE,
                 preexec_fn = preexec_function,
                 bufsize = 1, universal_newlines = True, 
                 shell = True)
-                #  )
+        
+        #  job.communicate()
         self.d_running_command[name] = job
         pass
 
     def stop_command(self, name):
-        print("stopping command", name)
+        print("\nstopping command", name)
         #  self.d_running_command[name].terminate()
         self.d_running_command[name].send_signal(signal.SIGINT)
         self.d_running_command[name].wait()

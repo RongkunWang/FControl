@@ -1,31 +1,18 @@
 # Abstract
 class OpcFlxRelation:
     def __init__(self):
-
         self.l_flx = []
         self.d_flx_opc = {}
-        self.exe_flx = "felixcore"
-
         self.l_opc = []
         self.d_opc_flx = {}
-        self.d_opc_port = {}
-        self.d_opc_command = {}
 
     def return_list_opc(self):
         return self.l_opc
 
     def return_list_flx(self,):
-        """
-        return a list of flx server that is used, ordered in sector order
-        """
-        #  l = []
-        #  for sector in self.d_opc_flx:
-            #  flx = self.d_opc_flx[sector][0]
-            #  if flx in l: continue
-            #  l.add(flx)
         return self.l_flx
 
-    def add_opc_flx(self, opc, l_flx, port = 48020):
+    def add_opc_flx(self, opc, l_flx):
         """
         set up how an opc(sector) is relied on an felix.
             the first element is where the opc server will be run
