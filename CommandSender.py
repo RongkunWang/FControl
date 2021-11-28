@@ -13,17 +13,22 @@ class CommandSender:
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
         pass
 
+
+    def full_log(self, name):
+        return os.path.join(self.log_dir, name)
+
     def send_command(self, name, log_file, host, cmd):
         def preexec_function():
             #  signal.signal(signal.SIGINT,  signal.SIG_IGN)
-            signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-            signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+            #  signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+            #  signal.signal(signal.SIGQUIT, signal.SIG_IGN)
             pass
 
         print("\nstarting command", name, cmd)
 
         self.d_log_file[name] = open(os.path.join(self.log_dir, log_file), "w")
-        job = subprocess.Popen(f"ssh -o StrictHostKeyChecking=no -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\"", 
+        #  job = subprocess.Popen(f"ssh -o StrictHostKeyChecking=no -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\"", 
+        job = subprocess.Popen(f"ssh -o StrictHostKeyChecking=no -t -t {host} \"{cmd}\"", 
                 stdout = self.d_log_file[name], 
                 stderr = self.d_log_file[name], 
                 stdin  = subprocess.PIPE,
@@ -37,9 +42,9 @@ class CommandSender:
 
     def stop_command(self, name):
         print("\nstopping command", name)
-        #  self.d_running_command[name].terminate()
-        self.d_running_command[name].send_signal(signal.SIGINT)
-        self.d_running_command[name].wait()
+        self.d_running_command[name].terminate()
+        #  self.d_running_command[name].send_signal(signal.SIGINT)
+        #  self.d_running_command[name].wait()
         self.d_log_file[name].close()
 
         del self.d_running_command[name]
