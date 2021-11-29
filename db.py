@@ -22,7 +22,6 @@ OPC_EXE = "OpcUaScaServer"
 # TODO: felix-id
 # TODO: interface configurable
 flx_arg = { "pc-tdq-flx-nsw-mm-{0:02d}.cern.ch".format(key) : "--data-interface vlan413" for key in range(12) }
-
 flx_arg.update({ "pc-tdq-flx-nsw-stgc-{0:02d}.cern.ch".format(key) : "--data-interface vlan413" for key in range(16) })
 
 for sector, flx in opc_mapping.d_host_mma.items():
@@ -33,10 +32,8 @@ for sector, flx in opc_mapping.d_host_mma.items():
 
 flx_dict["MM"]["A03"].append( flx_dict["MM"]["A05"][0] ) 
 flx_dict["MM"]["A06"].append( flx_dict["MM"]["A05"][0] ) 
-
 flx_dict["MM"]["A11"].append( flx_dict["MM"]["A13"][0] ) 
 flx_dict["MM"]["A14"].append( flx_dict["MM"]["A13"][0] ) 
-
 
 for sector, flx in opc_mapping.d_host_mmc.items():
     sector = f"C{sector:02d}"
@@ -46,13 +43,12 @@ for sector, flx in opc_mapping.d_host_mmc.items():
 
 flx_dict["MM"]["C03"].append( flx_dict["MM"]["C05"][0] ) 
 flx_dict["MM"]["C06"].append( flx_dict["MM"]["C05"][0] ) 
-
 flx_dict["MM"]["C11"].append( flx_dict["MM"]["C13"][0] ) 
 flx_dict["MM"]["C14"].append( flx_dict["MM"]["C13"][0] ) 
 
-
-
-
+#################################################
+# OPC
+#################################################
 
 for sector, flx in opc_mapping.d_host_stgca.items():
     sector = f"A{sector:02d}"
@@ -65,11 +61,6 @@ for sector, flx in opc_mapping.d_host_stgcc.items():
     flxhost, port = flx.split(":")
     flx_dict["sTGC"][sector] = [flxhost]
     port_dict["sTGC"][sector] = port
-
-
-#################################################
-# OPC
-#################################################
 
 opc_dict = {}
 opc_dict["MM"] = {}
@@ -144,7 +135,6 @@ opc_dict["sTGC"]["C13"] = OPC_STGCC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-14
 opc_dict["sTGC"]["C14"] = OPC_STGCC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-14_STG_C14_OLDNCMING.xml"
 opc_dict["sTGC"]["C15"] = OPC_STGCC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-15_STG_C15_OLDNCMING.xml"
 opc_dict["sTGC"]["C16"] = OPC_STGCC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-stgc-15_STG_C16_OLDNCMING.xml"
-
 
 def OpcPort(port):
     return f"--opcua_backend_config /det/dcs/Development/ATLAS_DCS_MUO/muoNswEltxScaOpcConfigTemplates/ServerConfig_{port}.xml"
