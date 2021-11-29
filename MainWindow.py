@@ -4,11 +4,11 @@ from PyQt5 import  QtCore
 from CtrlPanel import CtrlPanel
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, title):
         QMainWindow.__init__(self)
 
 
-        self.setWindowTitle("FControl")
+        self.setWindowTitle(f"FControl - {title}")
         self.resize(1400, 900)
 
         self.tabs = QTabWidget()

@@ -6,12 +6,12 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication
 
 from MainWindow import MainWindow
-
+from git_version import git_version
 
 class Execute(QApplication):
-    def __init__(self, *argv):
+    def __init__(self, git_tag, *argv):
         QApplication.__init__(self, sys.argv)
-        self._win = MainWindow()
+        self._win = MainWindow(git_tag)
 
         QtCore.QCoreApplication.instance().installEventFilter(self)
         pass
@@ -29,7 +29,7 @@ class Execute(QApplication):
         self._win.closeEvent(QtCore.QEvent(QtCore.QEvent.Close))
 
 if __name__ == '__main__':
-    app = Execute(sys.argv)
+    app = Execute(git_version(), sys.argv)
 
     def sigint_handler(*args):
         print("\nCtrl+C pressed. Closing.") 
