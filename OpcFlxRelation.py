@@ -1,10 +1,11 @@
+from FlxServer import FlxServer
+from OpcServer import OpcServer
+
 # Abstract
 class OpcFlxRelation:
     def __init__(self):
-        self.l_flx = []
-        self.d_flx_opc = {}
-        self.l_opc = []
-        self.d_opc_flx = {}
+        self.l_flx = {}
+        self.l_opc = {}
 
     def return_list_opc(self):
         return self.l_opc
@@ -23,15 +24,14 @@ class OpcFlxRelation:
 
         killing the corresponding felix will kill all related opc
         """
-        self.l_opc.append(opc)
-        if l_flx[0] not in self.l_flx:
-            self.l_flx.append(l_flx[0])
-        self.d_opc_flx[opc] = l_flx
+        flx = l_flx[0]
+        self.l_opc[opc] = OpcServer(flx)
         for flx in l_flx:
-            if flx not in self.d_flx_opc:
-                self.d_flx_opc[flx] = set()
-                pass
-            self.d_flx_opc[flx].add(opc)
+            if flx not in self.l_flx:
+                self.l_flx[flx] = FlxServer(flx)
+        self.l_opc[opc].l_flx = list(l_flx)
+        for flx in l_flx:
+            self.l_flx[flx].l_opc.add(opc)
             pass
         pass
 
@@ -41,7 +41,7 @@ class OpcFlxRelation:
         """
         flx_set = set([flx])
         opc_set = set()
-        for opc in self.d_flx_opc[flx]:
+        for opc in self.l_flx[flx].l_opc:
             opc_set.add(opc)
             pass
         return flx_set, opc_set
@@ -53,22 +53,23 @@ class OpcFlxRelation:
         """
         flx_set = set()
         opc_set = set([opc])
-        for flx in self.d_opc_flx[opc]:
+        for flx in self.l_opc[opc].l_flx:
             flx_set.add(flx)
             opc_set.update(self.kill_chain_flx(flx)[1])
             pass
         return flx_set, opc_set
 
-
-
 if __name__ == "__main__":
-    a = OpcFlxRelationship()
-    a.add_opc_flx(1, ["flx1"])
-    a.add_opc_flx(2, ["flx1"])
-    a.add_opc_flx(3, ["flx1", "flx2"])
-    a.add_opc_flx(4, ["flx2"])
-    a.add_opc_flx(5, ["flx2"])
-    a.add_opc_flx(6, ["flx3", "flx2"])
-    a.add_opc_flx(7, ["flx3"])
-    a.add_opc_flx(8, ["flx3"])
-    print(a.kill_chain_flx("flx1"))
+    import sys
+    from PyQt5.QtWidgets import QApplication
+    q = QApplication(sys.argv)
+    a = OpcFlxRelation()
+    a.add_opc_flx(1, ["pc-tdq-flx-nsw-mm-01.cern.ch"])
+    a.add_opc_flx(2, ["pc-tdq-flx-nsw-mm-01.cern.ch"])
+    a.add_opc_flx(3, ["pc-tdq-flx-nsw-mm-01.cern.ch", "pc-tdq-flx-nsw-mm-02.cern.ch"])
+    a.add_opc_flx(4, ["pc-tdq-flx-nsw-mm-02.cern.ch"])
+    a.add_opc_flx(5, ["pc-tdq-flx-nsw-mm-02.cern.ch"])
+    a.add_opc_flx(6, ["pc-tdq-flx-nsw-mm-03.cern.ch", "pc-tdq-flx-nsw-mm-02.cern.ch"])
+    a.add_opc_flx(7, ["pc-tdq-flx-nsw-mm-03.cern.ch"])
+    a.add_opc_flx(8, ["pc-tdq-flx-nsw-mm-03.cern.ch"])
+    print(a.kill_chain_flx("pc-tdq-flx-nsw-mm-01.cern.ch"))

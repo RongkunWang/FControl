@@ -18,13 +18,13 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.MMA, "MM-A")
 
         self.MMC = CtrlPanel("MM", 1)
-        #  self.tabs.addTab(self.MMC, "MM-C")
+        self.tabs.addTab(self.MMC, "MM-C")
 
         self.sTGCA = CtrlPanel("sTGC")
         self.tabs.addTab(self.sTGCA, "sTGC-A")
 
         self.sTGCC = CtrlPanel("sTGC", 1)
-        #  self.tabs.addTab(self.sTGCC, "sTGC-C")
+        self.tabs.addTab(self.sTGCC, "sTGC-C")
 
         self.show()
         pass
