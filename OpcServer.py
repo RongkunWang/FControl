@@ -28,11 +28,11 @@ class OpcServer(Server):
     def l_flx(self, flxs):
         self._l_flx = flxs
 
-
     def check(self):
         #  data = super(Server, self).check(self)
         data = super().check()
-        pid = data[0].split()[1]
-        self._kill_command = f"kill -9 {pid}"
+        if len(data) > 2:
+            pid = data[0].split()[1]
+            self._kill_command = f"kill -9 {pid}"
         return data
     pass

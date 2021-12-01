@@ -30,6 +30,8 @@ class Server(QWidget):
         self._check_running_command = check_running_command
         self._kill_command = kill_cmd
 
+        self.server_timeout = 5000
+
         self._cs = None
         self._init_jobname = None
         self._run_jobname = None
@@ -177,22 +179,48 @@ class Server(QWidget):
         job = self.cs.send_command(check_job_name, check_job_name,
                 self.hostname, self.check_running_command, toFile = False)
         # make asynchronous??
-        job.waitForFinished(10000)
+        job.waitForFinished(self.server_timeout)
         data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
+        data = self.strip(data)
+        print(data)
         return data
+
+    def strip(self, data):
+        host_key_changed = False
+        index = 0
+        for i, var in enumerate(data):
+            if "@@@@@@@@@@@" in var and i == 0:
+                print("@@@ found")
+                host_key_changed == True
+                continue
+            print(var)
+            if host_key_changed and ("X11 forwarding is disabled" in var):
+                print("middle")
+                index = i+1
+                break
+            pass
+
+        if host_key_changed:
+            return data[index:]
+        else:
+            return data
 
     def kill(self, ):
         kill_job_name = f"kill_{self.run_jobname}"
         job = self.cs.send_command(kill_job_name, kill_job_name, 
                 self.hostname, f"{self.kill_command} && echo $? && sleep 0.1", toFile = False)
-        job.waitForFinished(10000)
+        job.waitForFinished(self.server_timeout)
         data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
         return bool(data[0])
 
     def check_and_kill(self):
         data = self.check()
-        user = data[0].split()[0]
+        if len(data) == 1 and data[0] == "":
+            msgBox = QMessageBox.warning(self, "Is Server On?", 
+                f"Please check if PC {self.hostname} is powered on.")
+            return False
         if len(data) > 2:
+            user = data[0].split()[0]
             ret = QMessageBox.question(self, "Running server",
                     f"Server process {self.command_name} already running on {self.hostname}: \n\n    \"{data[0]}\"\n\n Try killing it?", 
                     QMessageBox.Yes | QMessageBox.No,
