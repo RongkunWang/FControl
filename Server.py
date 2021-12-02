@@ -182,7 +182,8 @@ class Server(QWidget):
         job.waitForFinished(self.server_timeout)
         data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
         data = self.strip(data)
-        print(data)
+        #  data = [i.strip() for i in data]
+        #  print(data)
         return data
 
     def strip(self, data):
@@ -191,10 +192,11 @@ class Server(QWidget):
         for i, var in enumerate(data):
             if "@@@@@@@@@@@" in var and i == 0:
                 print("@@@ found")
-                host_key_changed == True
+                host_key_changed = True
                 continue
             print(var)
-            if host_key_changed and ("X11 forwarding is disabled" in var):
+            #  print("X11 forwarding" in var)
+            if (host_key_changed) and ("X11 forwarding is disabled" in var):
                 print("middle")
                 index = i+1
                 break
