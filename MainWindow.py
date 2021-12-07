@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import  QTabWidget, QMainWindow, QApplication
 from PyQt5 import  QtCore
 
 from CtrlPanel import CtrlPanel
+from TPCtrlPanel import TPCtrlPanel
 
 class MainWindow(QMainWindow):
     def __init__(self, title):
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
         self.sTGCC = CtrlPanel(self, "sTGC", 1)
         self.tabs.addTab(self.sTGCC, "sTGC-C")
 
-        self.TP = CtrlPanel(self, "TP")
+        self.TP = TPCtrlPanel(self, "TP")
         self.tabs.addTab(self.TP, "TP")
 
         self.show()
