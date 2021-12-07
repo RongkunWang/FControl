@@ -9,22 +9,25 @@ class MainWindow(QMainWindow):
 
 
         self.setWindowTitle(f"FControl - {title}")
-        self.resize(1400, 900)
+        self.resize(1200, 800)
 
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
 
-        self.MMA = CtrlPanel()
+        self.MMA = CtrlPanel(self,)
         self.tabs.addTab(self.MMA, "MM-A")
 
-        self.MMC = CtrlPanel("MM", 1)
+        self.MMC = CtrlPanel(self, "MM", 1)
         self.tabs.addTab(self.MMC, "MM-C")
 
-        self.sTGCA = CtrlPanel("sTGC")
+        self.sTGCA = CtrlPanel(self, "sTGC")
         self.tabs.addTab(self.sTGCA, "sTGC-A")
 
-        self.sTGCC = CtrlPanel("sTGC", 1)
+        self.sTGCC = CtrlPanel(self, "sTGC", 1)
         self.tabs.addTab(self.sTGCC, "sTGC-C")
+
+        self.TP = CtrlPanel(self, "TP")
+        self.tabs.addTab(self.TP, "TP")
 
         self.show()
         pass
@@ -36,8 +39,9 @@ class MainWindow(QMainWindow):
         self.MMC.quit()
         self.sTGCA.quit()
         self.sTGCC.quit()
+        self.TP.quit()
+
         event.accept()
         QApplication.quit()
         # TODO: can ask if yes or not!
-        #  return True
     pass

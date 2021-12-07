@@ -1,14 +1,33 @@
-import os, pathlib
+import os, pathlib, time
 from functools import partial
 import codecs
+from enum import Enum
 
-from PyQt5.QtCore import pyqtSlot, Qt, QUrl
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QUrl, QIODevice, QFile, QTimer
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QDialog, QMessageBox, QTextBrowser
 
-import utilities
+import utilities, db
+
+class ServerState(Enum):
+    NotRunning = 0
+    Stable = 1
+    Communicating = 2
+    Error = 3
 
 class Server(QWidget):
+    class LogChecker(QWidget):
+        closed = pyqtSignal()
+        def __init__(self):
+            super(Server.LogChecker, self).__init__()
+
+        def closeEvent(self, event): 
+            self.closed.emit()
+            pass
+        pass
+
+    stableSignal = pyqtSignal()
+    communicatingSignal = pyqtSignal()
     def __init__(self, 
             hostname, 
             command_name,
@@ -30,11 +49,27 @@ class Server(QWidget):
         self._check_running_command = check_running_command
         self._kill_command = kill_cmd
 
-        self.server_timeout = 5000
+        self.l_window = []
+        # 0 not running 1 ready 2 communicating 3 error
+        self._state = ServerState.NotRunning
+
+        # signature for actively stopping job
+        self.active_stop = False
+
+        # ms
+        self._server_timeout      = 5000
+        self._server_check_period = 1000
+
+        self._fileLog = None 
+        self._logSize = -1
+        self._widLog = None
+        self._textLog = None
 
         self._cs = None
         self._init_jobname = None
         self._run_jobname = None
+        self._runTimer = QTimer()
+        self._readTimer = QTimer()
         self._init_ind = None
         self._run_ind = None
         self._checkbox = None
@@ -169,21 +204,18 @@ class Server(QWidget):
                 self.init_command,
                 partial(stop_job))
         self.set_enable_state()
-        # yellow green
-        utilities.set_button_color(self.init_ind, QtGui.QColor(173, 255, 47))
-        #  utilities.set_palette_color(self.init_ind, QtGui.QPalette.ButtonText, QtGui.QColor(Qt.black))
+        self.stable(self.init_ind)
         pass
 
     def check(self, ):
         check_job_name = f"check_{self.run_jobname}"
         job = self.cs.send_command(check_job_name, check_job_name,
                 self.hostname, self.check_running_command, toFile = False)
-        # make asynchronous??
-        job.waitForFinished(self.server_timeout)
+        # TODO: make asynchronous??
+        job.waitForFinished(self._server_timeout)
         data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
         data = self.strip(data)
-        #  data = [i.strip() for i in data]
-        #  print(data)
+        print(data)
         return data
 
     def strip(self, data):
@@ -194,24 +226,23 @@ class Server(QWidget):
                 print("@@@ found")
                 host_key_changed = True
                 continue
-            print(var)
-            #  print("X11 forwarding" in var)
             if (host_key_changed) and ("X11 forwarding is disabled" in var):
                 print("middle")
                 index = i+1
                 break
-            pass
 
-        if host_key_changed:
-            return data[index:]
-        else:
-            return data
+            if "Warning: Permanently added" in var:
+                index = i+1
+                break
+
+            pass
+        return data[index:]
 
     def kill(self, ):
         kill_job_name = f"kill_{self.run_jobname}"
         job = self.cs.send_command(kill_job_name, kill_job_name, 
                 self.hostname, f"{self.kill_command} && echo $? && sleep 0.1", toFile = False)
-        job.waitForFinished(self.server_timeout)
+        job.waitForFinished(self._server_timeout)
         data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
         return bool(data[0])
 
@@ -236,38 +267,82 @@ class Server(QWidget):
                 return False
         return True
 
+    def communicating(self):
+        """
+        state indicator
+        """
+        utilities.set_button_color(self.run_ind, Qt.yellow)
+        if self._state != ServerState.Communicating:
+            self.communicatingSignal.emit()
+            self._state = ServerState.Communicating
+
+    def stable(self, but = None):
+        """
+        state indicator
+        """
+        color = Qt.green
+        if not but:
+            but = self.run_ind
+        utilities.set_button_color(but, color)
+        if self._state != ServerState.Stable:
+            self.stableSignal.emit()
+            self._state = ServerState.Stable
+
+
+
+    #  def stop(self, ):
+        #  pass
+
 
     @pyqtSlot()
     def run(self):
         if not self.check_and_kill():
             return
 
+        # already has text log, meaning the log window is opened
+        if self._textLog:
+            self._textLog.clear()
+            if self._fileLog and self._fileLog.isOpen():
+                self._fileLog.close()
+                self._fileLog = None
+            pass
 
         @pyqtSlot()
         def stop_job(*args):
             self.set_enable_state()
+            utilities.set_button_color(self.run_ind)
+            self.monitor(False)
+            if not self.active_stop:
+                QMessageBox.warning(self, "Server killed", 
+                        f"Oops, someone killed your {self.run_jobname}. Or there's something wrong with the config(contact {db.author} if you suspect it's the case).")
             pass
         self.cs.send_command(self.run_jobname, 
                 self.run_jobname, 
                 self.hostname, self.run_command,
                 partial(stop_job))
-        utilities.set_button_color(self.run_ind, Qt.yellow)
+        #  self._fileMon = QFile(str(self.cs.full_log(self.run_jobname)))
+        #  self._fileMon.open(QIODevice.ReadOnly)
+
         self.set_enable_state()
+        self.monitor()
+
         pass
 
     @pyqtSlot()
     def stop(self):
-        if self.cs.has_job(self.run_jobname):
-            self.cs.stop_command(self.run_jobname)
-        else:
-            self.set_enable_state()
+        self.active_stop = True
+        self.cs.stop_command(self.run_jobname)
+        self.active_stop = False
+        pass
 
-        utilities.set_button_color(
-                self.run_ind,)
+
+    def update_log(self, wid, text):
         pass
 
     @pyqtSlot()
-    def log(self):
+    def log(self, parent):
+        if self._textLog:
+            return
         # TODO: Qt console
         full_log = self.cs.full_log(self.run_jobname)
         if not self.cs.has_job(self.run_jobname):
@@ -283,13 +358,93 @@ class Server(QWidget):
                 msgBox = QMessageBox.warning(self, "No log file", 
                         "No active job found and no log file.")
                 return
-        QtGui.QDesktopServices.openUrl(QUrl.fromLocalFile( str(full_log) ))
+            pass
+
+        # the easy
+        # QtGui.QDesktopServices.openUrl(QUrl.fromLocalFile( str(full_log) ))
+
+        # the better
+        wid = Server.LogChecker()
+        #  wid = QWidget(parent)
+        #  wid = QDialog(parent)
+        #  wid = QtGui.QWindow()
+        #  wid.setModal(True)
+        #  print(wid.isModal())
+        wid.resize(1200, 800)
+        wid.setWindowTitle(f"log {self.run_jobname}")
+        #  wid.setTitle(f"log {self.run_jobname}")
+
+        #  widget = QWidget(wid)
+
+        self._textLog = QTextBrowser(wid)
+        lay = QHBoxLayout(wid)
+        lay.addWidget(self._textLog)
+        wid.show()
+
+        # do it first before the timeout ends
+        self.read()
+
+        # TODO: two timer good or bad?
+        self._readTimer.start(self._server_check_period)
+        self._readTimer.timeout.connect(partial(self.read))
+
+        def stop_read():
+            # TODO: do I need to close it??
+            if self._fileLog:
+                self._readTimer.stop()
+                self._fileLog.close()
+                self._fileLog = None
+                self._textLog = None
+                self._readTimer.timeout.disconnect()
+        # TODO:urgent re-enable the window
+        #  wid.finished.connect(partial(stop_read))
+        wid.closed.connect(partial(stop_read))
+        self._widLog = wid
         pass
 
-    def health_size(self, full_log):
-        # TODO-1: check by checking file size every 3 second
+
+    def monitor(self, start = True):
+        """
+        start monitor if start=True, else stop
+        """
+
+        if start == True:
+            self._logSize = -1
+            self._runTimer.start(self._server_check_period)
+            def check_size():
+                s = self.cs.check_size(self.run_jobname)
+                if self._logSize == s:
+                    self.stable()
+                else:
+                    self.communicating()
+                self._logSize = s
+            self._runTimer.timeout.connect(partial(check_size))
+        else:
+            self._runTimer.stop()
+            self._runTimer.timeout.disconnect()
+            pass
+
+    @pyqtSlot()
+    def read(self):
+        """
+        asynchronous reading
+        #  """
+        if not self._fileLog:
+            self._fileLog = QFile(str(self.cs.full_log(self.run_jobname)))
+            self._fileLog.open(QIODevice.ReadOnly)
+
+        # open device
+        if not self._fileLog.isOpen():
+            return
+
+        while not self._fileLog.atEnd():
+            line = self._fileLog.readLine()
+            line = codecs.decode(line, "utf-8").strip()
+            if self._textLog:
+                self._textLog.append(line)
+            else:
+                print(line)
+                pass
+            pass
         pass
 
-    def health_message(self):
-        "FelixCore Up and Running"
-        pass

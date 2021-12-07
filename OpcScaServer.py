@@ -1,9 +1,10 @@
 import db
 from Server import Server
 
-class OpcServer(Server):
+class OpcScaServer(Server):
     def __init__(self, flx_host):
-        Server.__init__(self, flx_host, 
+        Server.__init__(self, 
+                flx_host, 
                 f"{db.OPC_EXE}",
                 "true", 
                 "true",
