@@ -1,5 +1,5 @@
 from FlxServer import FlxServer
-from OpcServer import OpcServer
+from OpcScaServer import OpcScaServer
 
 # Abstract
 class OpcFlxRelation:
@@ -25,7 +25,7 @@ class OpcFlxRelation:
         killing the corresponding felix will kill all related opc
         """
         flx = l_flx[0]
-        self.l_opc[opc] = OpcServer(flx)
+        self.l_opc[opc] = OpcScaServer(flx)
         for flx in l_flx:
             if flx not in self.l_flx:
                 self.l_flx[flx] = FlxServer(flx)

@@ -4,11 +4,14 @@ import pathlib
 import time
 
 from PyQt5.QtCore import QProcess, QIODevice
+from PyQt5.QtWidgets import QWidget, QMessageBox
 
 USER = os.environ["USER"]
 
-class CommandSender:
+class CommandSender(QWidget, ):
     def __init__(self, log_dir):
+        QWidget.__init__(self)
+
         self.d_running_command = {}
         self.d_log_file = {}
         self.d_log_size = {}
@@ -65,15 +68,12 @@ class CommandSender:
 
     def stop_command(self, name):
         if not self.has_job(name):
+            # TODO: this is called twice sometimes..
             return
         print("\nstopping command", name)
         self.d_running_command[name].terminate()
-        #  self.d_running_command[name].send_signal(signal.SIGINT)
-        #  self.d_running_command[name].wait()
-        #  self.d_log_file[name].close()
 
         del self.d_running_command[name]
-        #  del self.d_log_file[name]
         pass
 
     def stop_all(self):
@@ -96,7 +96,11 @@ class CommandSender:
         for f in self.log_dir.iterdir():
             print("Deleting " / f)
             if f.is_file():
-                f.unlink()
+                try:
+                    f.unlink()
+                except OSError:
+                    msgBox = QMessageBox.warning(self, "Running server", 
+                        f"You have running server, stop them before clearing cache!")
             elif f.is_dir():
                 shutil.rmtree(f)
         pass

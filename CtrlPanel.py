@@ -11,16 +11,17 @@ from OpcFlxRelation import OpcFlxRelation
 from CommandSender import CommandSender
 
 
-
 USER = os.environ["USER"]
 
 class CtrlPanel(QWidget, OpcFlxRelation):
-    def __init__(self, det = "MM", side = 0):
+    def __init__(self, parent, det = "MM", side = 0):
+        self.parent = parent
         sside = "C" if side else "A"
+        self.isTP = True if det == "TP" else False
         QWidget.__init__(self)
         OpcFlxRelation.__init__(self)
 
-        self.cs = CommandSender(f"/shared/data/{USER}/FControl/{det}-{sside}")
+        self.cs = CommandSender(db.getLog(USER, det, sside))
         self.det = det
 
         self.ncolflx = 5
@@ -39,16 +40,21 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.l_opc_log_but  = {}
 
         for sector, l_flx in db.flx_dict[self.det].items():
+            if self.isTP:
+                self.add_opc_flx(sector, l_flx)
+                continue
             if (side == 0 and "C" in sector) or (side == 1 and "A" in sector):
                 continue
             self.add_opc_flx(sector, l_flx)
 
+        #########################################
         # global buttons
+        #########################################
         self.layout_main = QGridLayout(self)
         self.layout_but = QGridLayout()
         self.layout_main.addLayout(self.layout_but, 2, 0, 1, self.ncol)
 
-        self.but_init_all = QPushButton("flx-init all felix")
+        self.but_init_all = QPushButton("setup all selected felix")
         self.but_init_all.setEnabled(False)
         utilities.set_default_button_color( self.but_init_all.palette() )
         self.but_init_all.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -69,6 +75,9 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.layout_main.addWidget(self.but_clear_cache, 0, self.ncol - 1, 1, 1)
         self.but_clear_cache.clicked.connect(partial(self.cs.delete_all_log))
 
+        #########################################
+        # buttons for checked servers
+        #########################################
         self.cb_all_flx = QCheckBox("All felix")
         self.cb_all_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.cb_all_flx, 0, 0, 1, 1)
@@ -102,10 +111,15 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.but_stop_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_stop_all_selected_opc, 0, self.ncolflx + 2, 1, 1)
 
+        #########################################
         # individual buttons
+        #########################################
         nrow = 1
         for flx, server in self.return_list_flx().items():
             server.cs = self.cs
+            # TODO: do things based on catching
+            server.stableSignal.connect(partial(print, "ready received"))
+            server.communicatingSignal.connect(partial(print, "communicating received"))
             #  server.init_jobname = self.init_flx_jobname(flx)
             #  server.run_jobname = self.flx_jobname(flx)
 
@@ -133,7 +147,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             but.setEnabled(False)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_flx_run_but[flx] =  but 
-            self.layout_but.addWidget( self.l_flx_run_but[flx], nrow, 2, rowspan, 1)
+            self.layout_but.addWidget(self.l_flx_run_but[flx], nrow, 2, rowspan, 1)
             but.clicked.connect(partial(server.run), QtCore.Qt.UniqueConnection | QtCore.Qt.QueuedConnection)
             server.run_controller = but
 
@@ -142,7 +156,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             but.setEnabled(False)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_flx_stp_but[flx] =  but 
-            self.layout_but.addWidget( self.l_flx_stp_but[flx], nrow, 3, rowspan, 1)
+            self.layout_but.addWidget(self.l_flx_stp_but[flx], nrow, 3, rowspan, 1)
             but.clicked.connect(partial(server.stop))
             server.stop_controller = but
 
@@ -150,11 +164,12 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             but = QPushButton("check log")
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_flx_log_but[flx] =  but 
-            self.layout_but.addWidget( self.l_flx_log_but[flx], nrow, 4, rowspan, 1)
-            but.clicked.connect(partial(server.log))
+            self.layout_but.addWidget(self.l_flx_log_but[flx], nrow, 4, rowspan, 1)
+            but.clicked.connect(partial(server.log, self.parent))
             server.run_ind = but
 
             nrow += rowspan
+            pass # flx
 
         nrow = 1
         for sector, server in self.return_list_opc().items():
@@ -191,34 +206,17 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_opc_log_but[sector] =  but 
             self.layout_but.addWidget( self.l_opc_log_but[sector], nrow, self.ncolflx + 3, rowspan, 1)
-            but.clicked.connect(partial(server.log))
+            but.clicked.connect(partial(server.log, self.parent))
             server.run_ind = but
 
             nrow += rowspan
-            pass
+            pass # opc
 
-        self.set_signal()
-        pass
-
-    # Functionality
-    #  def flx_jobname(self, flx):
-        #  return f"felixcore_{flx}"
-
-    #  def init_flx_jobname(self, flx):
-        #  return f"init_{flx}"
-
-    #  def opc_jobname(self, sector):
-        #  return f"opc_{sector}"
-
-    def set_signal(self):
         self.set_cb_relationship()
-        self.set_button()
-        pass
-
-    def set_button(self,):
         pass
 
     def set_cb_relationship(self,):
+        @QtCore.pyqtSlot(int)
         def toggle_checkbox(l_cb, state):
             for cb in l_cb:
                 cb.setCheckState(state)
@@ -257,8 +255,6 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             for flx in self.l_opc[name].l_flx:
                 l_flx_cb.append(self.l_flx_cb[flx])
             cb.stateChanged.connect(partial(toggle_flx_checkbox, name, l_flx_cb))
-
-
 
     def quit(self):
         self.cs.stop_all()
