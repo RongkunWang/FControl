@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 1 ]; then
+    echo "please pass in the tag number"
+    exit 1
+fi
+
+tag=$1
+currentTag=$(git describe)
+
+if [ $1 == $currentTag ]; then
+    echo "already on $tag, do nothing"
+    exit 0
+fi
+git pull --tags
+git checkout $tag
+
+if [ $? -ne 0 ]; then
+    echo "please check if your tag exists"
+    exit 1
+fi
+
+gitAuthor=$(git config --global --get user.name)
+urlBody="${USER}(${gitAuthor}) deployed tag: %0D%0A%0D%0A **$tag**"
+urlBody=$(sed "s/ /%20/g" <<< "$urlBody")
+echo $urlBody
+
+token=$FControl_deploy_token
+projecID="126273"
+issueID=1
+curl --request POST --header "PRIVATE-TOKEN: ${token}" "https://gitlab.cern.ch/api/v4/projects/${projecID}/issues/${issueID}/notes?body=$urlBody"
+echo
