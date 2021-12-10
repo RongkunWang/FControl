@@ -12,10 +12,15 @@ Everything is based on simple `ssh` to felix servers. This is because we don't h
 ## Open @ P1
 Login normally to any P1 machine that is not felix/swrod themselves, as FControl don't work normally there.
 
+### stable version
 ```
-source /sw/tdaq/setup/setup_tdaq-09-04-00.sh
 /atlas-home/1/rowang/NSW/GUI/FControl/FControl
 ```
+### nightly
+```
+/atlas-home/1/rowang/NSW/GUI/FControl/FControl_dev
+```
+
 
 ## Demonstration
 You'll see a window like below.
@@ -37,7 +42,7 @@ You'll see a window like below.
 1. Click the `run server` on corresponding felix/sector servers.
 1. Stop the server by `stop server`.
 1. You can check the log by `check log` button.
-1. Exit the GUI by either clicking the `x`, or pressing `Esc`, or `Ctrl+C` or `Ctrl+/` in the terminal
+1. Exit the GUI by either clicking the `x`, or pressing `Ctrl+C` or `Ctrl+/` in the terminal
 
 ### Advanced:
 

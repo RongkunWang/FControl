@@ -5,6 +5,22 @@ import os
 USER = os.environ["USER"]
 author = "Rongkun Wang <rongkun.wang@cern.ch>"
 
+
+def getLog(USER, det, sside = "A"):
+    if det == "TP":
+        return f"/shared/data/{USER}/FControl/TP"
+    else:
+        return f"/shared/data/{USER}/FControl/{det}-{sside}"
+
+TP_log_dir = getLog(USER, "TP")
+
+#################################################
+# GUI
+#################################################
+ncolflx = 5
+ncolopc = 4
+ncol = ncolflx + ncolopc  
+
 #################################################
 # FLX
 #################################################
@@ -24,8 +40,7 @@ FLX_EXE = "felixcore"
 OPC_EXE_DIR = "/det/dcs/Production/ScaOpcUa/bin/"
 OPC_EXE = "OpcUaScaServer"
 
-# TODO: felix-id
-# TODO: interface configurable
+# TODO: felix-id and interface configurable
 flx_arg = { "pc-tdq-flx-nsw-mm-{0:02d}.cern.ch".format(key) : "--data-interface vlan413" for key in range(12) }
 flx_arg.update({"pc-tdq-flx-nsw-stgc-{0:02d}.cern.ch".format(key) : "--data-interface vlan413" for key in range(16)})
 flx_arg.update({"pc-tdq-flx-nsw-tp-a-00.cern.ch" : "--data-interface vlan413 --elink 0-8000 --felix-id 0x30"})
@@ -78,19 +93,10 @@ port_dict["TP"]["C"] = 48020
 #################################################
 # OPC
 #################################################
-
 opc_dict = {}
 opc_dict["MM"] = {}
 opc_dict["sTGC"] = {}
 opc_dict["TP"] = {}
-
-def getLog(USER, det, sside = "A"):
-    if det == "TP":
-        return f"/shared/data/{USER}/FControl/TP"
-    else:
-        return f"/shared/data/{USER}/FControl/{det}-{sside}"
-
-TP_log_dir = getLog(USER, "TP")
 opc_dict["TP"]["A"] = f"{TP_log_dir}/TP-A.xml"
 opc_dict["TP"]["C"] = f"{TP_log_dir}/TP-C.xml"
 
@@ -106,6 +112,7 @@ opc_dict["MM"]["A05"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-01_MMG_A
 opc_dict["MM"]["A06"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-02_MMG_A6_OLDNAMING.xml"
 opc_dict["MM"]["A07"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-02_MMG_A7_OLDNAMING.xml"
 opc_dict["MM"]["A08"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-02_MMG_A8_OLDNAMING.xml"
+
 opc_dict["MM"]["A09"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-03_MMG_A9_OLDNAMING.xml"
 opc_dict["MM"]["A10"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-03_MMG_A10_OLDNAMING.xml"
 opc_dict["MM"]["A11"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-03_MMG_A11_OLDNAMING.xml"
@@ -114,14 +121,16 @@ opc_dict["MM"]["A13"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-04_MMG_A
 opc_dict["MM"]["A14"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-05_MMG_A14_OLDNAMING.xml"
 opc_dict["MM"]["A15"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-05_MMG_A15_OLDNAMING.xml"
 opc_dict["MM"]["A16"] = OPC_MMA_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-05_MMG_A16_OLDNAMING.xml"
+
 opc_dict["MM"]["C01"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-06_MMG_C1_OLDNAMING.xml"
 opc_dict["MM"]["C02"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-06_MMG_C2_OLDNAMING.xml"
 opc_dict["MM"]["C03"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-06_MMG_C3_OLDNAMING.xml"
 opc_dict["MM"]["C04"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-07_MMG_C4_OLDNAMING.xml"
 opc_dict["MM"]["C05"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-07_MMG_C5_OLDNAMING.xml"
-opc_dict["MM"]["C06"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-07_MMG_C6_OLDNAMING.xml"
+opc_dict["MM"]["C06"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-08_MMG_C6_OLDNAMING.xml"
 opc_dict["MM"]["C07"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-08_MMG_C7_OLDNAMING.xml"
 opc_dict["MM"]["C08"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-08_MMG_C8_OLDNAMING.xml"
+
 opc_dict["MM"]["C09"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-09_MMG_C9_OLDNAMING.xml"
 opc_dict["MM"]["C10"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-09_MMG_C10_OLDNAMING.xml"
 opc_dict["MM"]["C11"] = OPC_MMC_DIR + "ScaOpcUaServer_pc-tdq-flx-nsw-mm-09_MMG_C11_OLDNAMING.xml"

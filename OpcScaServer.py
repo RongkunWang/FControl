@@ -6,7 +6,7 @@ class OpcScaServer(Server):
         Server.__init__(self, 
                 flx_host, 
                 f"{db.OPC_EXE}",
-                "true", 
+                f"{db.FLX_SETUP}",
                 "true",
                 "true",
                 f"killall -9 {db.OPC_EXE}",
@@ -18,6 +18,7 @@ class OpcScaServer(Server):
         self.run_jobname = f"opc_{sector}"
         self._run_command = f"export PATH={db.OPC_EXE_DIR}:$PATH && "\
                 f"{db.OPC_EXE} {db.OpcPort(db.port_dict[det][sector])} {db.opc_dict[det][sector]}"
+        self._original_run_command = self.run_command
         self._check_running_command = f"ps aux | grep {db.OPC_EXE} | grep {db.opc_dict[det][sector]} | grep -v grep"
         pass
 
