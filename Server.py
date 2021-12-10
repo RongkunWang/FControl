@@ -2,6 +2,7 @@ import os, pathlib, time
 from functools import partial
 import codecs
 from enum import Enum
+import signal
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QUrl, QIODevice, QFile, QTimer
@@ -406,20 +407,20 @@ class Server(QWidget):
         self._readTimer.start(self._server_check_period)
         self._readTimer.timeout.connect(partial(self.read))
 
-        def stop_read():
-            # TODO: do I need to close it??
-            if self._fileLog:
-                self._readTimer.stop()
-                self._fileLog.close()
-                self._fileLog = None
-                self._textLog = None
-                self._readTimer.timeout.disconnect()
         # TODO:urgent re-enable the window
-        #  wid.finished.connect(partial(stop_read))
-        wid.closed.connect(partial(stop_read))
+        wid.closed.connect(partial(self.stop_read))
         self._widLog = wid
         pass
 
+    @pyqtSlot()
+    def stop_read(self):
+        # TODO: do I need to close it??
+        if self._fileLog:
+            self._readTimer.stop()
+            self._fileLog.close()
+            self._fileLog = None
+            self._textLog = None
+            self._readTimer.timeout.disconnect()
 
     def monitor(self, start = True):
         """
@@ -444,6 +445,24 @@ class Server(QWidget):
 
     @pyqtSlot()
     def read(self):
+        def handler(signum, frame):
+            raise Exception("End of time")
+            pass
+        signal.signal(signal.SIGALRM, handler)
+
+        signal.alarm(10)
+        try:
+            self.read_noTimeout()
+        except Exception as exc:
+            msgBox = QMessageBox.critical(self, f"{exc}",
+                    "Timeout after 10 seconds. stop log reading. Please check if the corresponding log is too large!")
+            self.stop_read()
+
+        # cancel the alarm
+        signal.alarm(0)
+        pass
+
+    def read_noTimeout(self):
         """
         asynchronous reading
         #  """
