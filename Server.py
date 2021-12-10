@@ -5,7 +5,7 @@ from enum import Enum
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QUrl, QIODevice, QFile, QTimer
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QDialog, QMessageBox, QTextBrowser
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMessageBox, QTextBrowser
 
 import utilities, db
 
@@ -45,7 +45,9 @@ class Server(QWidget):
         self._hostname = hostname
         self._command_name = command_name
         self._init_command = init_server_command
+        self._original_init_command = init_server_command
         self._run_command = run_server_command
+        self._original_run_command = run_server_command
         self._check_running_command = check_running_command
         self._kill_command = kill_cmd
 
@@ -58,7 +60,7 @@ class Server(QWidget):
 
         # ms
         self._server_timeout      = 5000
-        self._server_check_period = 1000
+        self._server_check_period = 500
 
         self._fileLog = None 
         self._logSize = -1
@@ -78,6 +80,9 @@ class Server(QWidget):
         self._stop_controller = None
         pass
 
+    def __str__(self):
+        return f"Host: {self.hostname}, Job: {self.run_jobname}"
+
     @property
     def command_name(self):
         return self._command_name
@@ -87,12 +92,24 @@ class Server(QWidget):
         return self._hostname
 
     @property
+    def original_init_command(self):
+        return self._original_init_command
+    @property
     def init_command(self):
         return self._init_command
+    @init_command.setter
+    def init_command(self, name):
+        self._init_command = name
 
+    @property
+    def original_run_command(self):
+        return self._original_run_command
     @property
     def run_command(self):
         return self._run_command
+    @run_command.setter
+    def run_command(self, name):
+        self._run_command = name
 
     @property
     def check_running_command(self):
@@ -314,7 +331,7 @@ class Server(QWidget):
             self.monitor(False)
             if not self.active_stop:
                 QMessageBox.warning(self, "Server killed", 
-                        f"Oops, someone killed your {self.run_jobname}. Or there's something wrong with the config(contact {db.author} if you suspect it's the case).")
+                        f"Oops, someone killed your {self.run_jobname}, or it died. \nOr there's something wrong with the config(contact {db.author} if you suspect it's the case).")
             pass
         self.cs.send_command(self.run_jobname, 
                 self.run_jobname, 
@@ -342,6 +359,7 @@ class Server(QWidget):
     @pyqtSlot()
     def log(self, parent):
         if self._textLog:
+            getattr(self._textLog.parentWidget(), "raise")()
             return
         # TODO: Qt console
         full_log = self.cs.full_log(self.run_jobname)

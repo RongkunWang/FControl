@@ -14,19 +14,17 @@ from CommandSender import CommandSender
 USER = os.environ["USER"]
 
 class CtrlPanel(QWidget, OpcFlxRelation):
-    def __init__(self, parent, det = "MM", side = 0):
+    def __init__(self, parent, det = "MM", side = 1, do_mainlayout = True):
         self.parent = parent
-        sside = "C" if side else "A"
-        self.isTP = True if det == "TP" else False
-        QWidget.__init__(self)
+        sside = "C" if (side == 2) else "A"
+        if do_mainlayout:
+            QWidget.__init__(self)
+            self.layout_main = QGridLayout(self)
         OpcFlxRelation.__init__(self)
 
         self.cs = CommandSender(db.getLog(USER, det, sside))
         self.det = det
 
-        self.ncolflx = 5
-        self.ncolopc = 4
-        self.ncol = self.ncolflx + self.ncolopc  
 
         self.l_flx_cb      = {}
         self.l_flx_ini_but = {}
@@ -40,19 +38,18 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.l_opc_log_but  = {}
 
         for sector, l_flx in db.flx_dict[self.det].items():
-            if self.isTP:
+            if side == 3:
                 self.add_opc_flx(sector, l_flx)
                 continue
-            if (side == 0 and "C" in sector) or (side == 1 and "A" in sector):
+            if (side == 1 and "C" in sector) or (side == 2 and "A" in sector):
                 continue
             self.add_opc_flx(sector, l_flx)
 
         #########################################
         # global buttons
         #########################################
-        self.layout_main = QGridLayout(self)
         self.layout_but = QGridLayout()
-        self.layout_main.addLayout(self.layout_but, 2, 0, 1, self.ncol)
+        self.layout_main.addLayout(self.layout_but, 2, 0, 1, db.ncol)
 
         self.but_init_all = QPushButton("setup all selected felix")
         self.but_init_all.setEnabled(False)
@@ -72,7 +69,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
         self.but_clear_cache = QPushButton("Clear Cache(potentially large!)")
         self.but_clear_cache.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_main.addWidget(self.but_clear_cache, 0, self.ncol - 1, 1, 1)
+        self.layout_main.addWidget(self.but_clear_cache, 0, db.ncol - 1, 1, 1)
         self.but_clear_cache.clicked.connect(partial(self.cs.delete_all_log))
 
         #########################################
@@ -101,15 +98,15 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
         self.cb_all_opc = QCheckBox("All opc")
         self.cb_all_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_but.addWidget(self.cb_all_opc, 0, self.ncolflx, 1, 1)
+        self.layout_but.addWidget(self.cb_all_opc, 0, db.ncolflx, 1, 1)
         self.but_start_all_selected_opc = QPushButton("Start checked opc")
         self.but_start_all_selected_opc.setEnabled(False)
         self.but_start_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_but.addWidget(self.but_start_all_selected_opc, 0, self.ncolflx + 1, 1, 1)
+        self.layout_but.addWidget(self.but_start_all_selected_opc, 0, db.ncolflx + 1, 1, 1)
         self.but_stop_all_selected_opc = QPushButton("Stop checked opc")
         self.but_stop_all_selected_opc.setEnabled(False)
         self.but_stop_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_but.addWidget(self.but_stop_all_selected_opc, 0, self.ncolflx + 2, 1, 1)
+        self.layout_but.addWidget(self.but_stop_all_selected_opc, 0, db.ncolflx + 2, 1, 1)
 
         #########################################
         # individual buttons
@@ -182,14 +179,14 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             cb = QCheckBox("Opc " + sector)
             cb.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_opc_cb[sector] = cb 
-            self.layout_but.addWidget( self.l_opc_cb[sector], nrow, self.ncolflx, rowspan, 1)
+            self.layout_but.addWidget( self.l_opc_cb[sector], nrow, db.ncolflx, rowspan, 1)
             server.checkbox = cb
 
             but = QPushButton("run server")
             but.setEnabled(False)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_opc_run_but[sector] = but 
-            self.layout_but.addWidget( self.l_opc_run_but[sector], nrow, self.ncolflx + 1, rowspan, 1)
+            self.layout_but.addWidget( self.l_opc_run_but[sector], nrow, db.ncolflx + 1, rowspan, 1)
             but.clicked.connect(partial(server.run))
             server.init_ind = but
             server.run_controller = but
@@ -198,14 +195,14 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             but.setEnabled(False)
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_opc_stp_but[sector] =  but 
-            self.layout_but.addWidget( self.l_opc_stp_but[sector], nrow, self.ncolflx + 2, rowspan, 1)
+            self.layout_but.addWidget( self.l_opc_stp_but[sector], nrow, db.ncolflx + 2, rowspan, 1)
             but.clicked.connect(partial(server.stop))
             server.stop_controller = but
 
             but = QPushButton("check log")
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_opc_log_but[sector] =  but 
-            self.layout_but.addWidget( self.l_opc_log_but[sector], nrow, self.ncolflx + 3, rowspan, 1)
+            self.layout_but.addWidget( self.l_opc_log_but[sector], nrow, db.ncolflx + 3, rowspan, 1)
             but.clicked.connect(partial(server.log, self.parent))
             server.run_ind = but
 
@@ -230,7 +227,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             if flx is 0(off), turn off opc, too
             """
             self.l_flx[flx].set_enable_state()
-            if state == 2: return
+            if state == QtCore.Qt.Checked: return
             for cb in l_cb:
                 cb.setCheckState(state)
             pass
@@ -247,7 +244,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             if opc is 2(on), turn on felix, too
             """
             self.l_opc[opc].set_enable_state()
-            if state == 0: return
+            if state == QtCore.Qt.Unchecked: return
             for cb in l_cb:
                 cb.setCheckState(state)
         for name, cb in self.l_opc_cb.items():

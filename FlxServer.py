@@ -5,7 +5,9 @@ from Server import Server
 
 class FlxServer(Server):
     def __init__(self, flx_host):
-        cmd = f"{db.FLX_SETUP} && flx-init && echo && flx-init -c1"
+        # check also TPCtrlPanel.py
+        cmd = f"{db.FLX_SETUP}"
+        #  cmd = f"{db.FLX_SETUP} && flx-init && echo && flx-init -c1"
         # for sector ones
         if flx_host not in (db.flx_dict["TP"]["A"] + db.flx_dict["TP"]["C"]):
             cmd = f"{db.FLX_SETUP} && /det/nsw/felix-configuration/nsw_felix_config.sh -n && echo && /atlas-home/0/ptzanis/Documents/conf_l1ddc.sh"

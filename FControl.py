@@ -13,15 +13,14 @@ class Execute(QApplication):
         QApplication.__init__(self, sys.argv)
         self._win = MainWindow(git_tag)
 
-        QtCore.QCoreApplication.instance().installEventFilter(self)
+        #  QtCore.QCoreApplication.instance().installEventFilter(self)
         pass
 
     def eventFilter(self, target, event):
         # Esc to close
         if event.type() == QtCore.QEvent.KeyPress:
-            if event.key() == QtCore.Qt.Key_Escape:
+            if event.key() == QtCore.Qt.Key_Escape and target == self._win:
                 self._win.closeEvent(event)
-                # TODO: can be done better?
                 return True
         return super(QApplication, self).eventFilter(target, event)
 
