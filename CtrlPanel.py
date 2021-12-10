@@ -51,21 +51,21 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.layout_but = QGridLayout()
         self.layout_main.addLayout(self.layout_but, 2, 0, 1, db.ncol)
 
-        self.but_init_all = QPushButton("setup all selected felix")
-        self.but_init_all.setEnabled(False)
-        utilities.set_default_button_color( self.but_init_all.palette() )
-        self.but_init_all.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_main.addWidget(self.but_init_all, 0, 0, 1, 1)
+        #  self.but_init_all = QPushButton("setup all selected felix")
+        #  self.but_init_all.setEnabled(False)
+        #  utilities.set_default_button_color( self.but_init_all.palette() )
+        #  self.but_init_all.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        #  self.layout_main.addWidget(self.but_init_all, 0, 0, 1, 1)
 
         self.but_kill_failed = QPushButton("Kill Failed Servers")
         self.but_kill_failed.setEnabled(False)
         self.but_kill_failed.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_main.addWidget(self.but_kill_failed, 0, 1, 1, 1)
+        self.layout_main.addWidget(self.but_kill_failed, 0, 0, 1, 1)
 
         self.but_restart_failed = QPushButton("Restart Failed Servers")
         self.but_restart_failed.setEnabled(False)
         self.but_restart_failed.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.layout_main.addWidget(self.but_restart_failed, 0, 2, 1, 1)
+        self.layout_main.addWidget(self.but_restart_failed, 0, 1, 1, 1)
 
         self.but_clear_cache = QPushButton("Clear Cache(potentially large!)")
         self.but_clear_cache.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
