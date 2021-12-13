@@ -6,7 +6,7 @@ class Format:
     pass
 
 __format__ = Format()
-__format__._default_button_pal = Qt.gray
+__format__._default_button_pal = None
 
 
 def set_default_button_color(pal):
