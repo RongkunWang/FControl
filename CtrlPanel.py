@@ -53,6 +53,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
         #  self.but_init_all = QPushButton("setup all selected felix")
         #  self.but_init_all.setEnabled(False)
+        #  utilities.set_default_button_color( self.but_init_all.palette() )
         #  self.but_init_all.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         #  self.layout_main.addWidget(self.but_init_all, 0, 0, 1, 1)
 
@@ -60,9 +61,6 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.but_kill_failed.setEnabled(False)
         self.but_kill_failed.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_main.addWidget(self.but_kill_failed, 0, 0, 1, 1)
-
-        # necesssary!
-        utilities.set_default_button_color( self.but_kill_failed.palette() )
 
         self.but_restart_failed = QPushButton("Restart Failed Servers")
         self.but_restart_failed.setEnabled(False)
