@@ -162,8 +162,11 @@ class TPCtrlPanel(CtrlPanel):
 
         self.label[side].setText(f"Current: {self.tech[side]} {l_sec_str}")
         # TODO: Use not label, but select box?
+
+        if len(l_sec_str) == 0:
+            l_sec_str = [0]
         
-        flxserver.init_command = f"{flxserver.original_init_command} && /atlas-home/1/rowang/NSW/elink/feconf.py -s {l_sec_str} -i" 
+        flxserver.init_command = f"{flxserver.original_init_command} && /atlas-home/1/rowang/NSW/elink/feconf.py -s {l_sec_str} -i -t {self.tech[side]}" 
         print(flxserver.init_command)
         opcserver.run_command = f"{opcserver.original_init_command} && /atlas-home/1/rowang/NSW/opc/generate.py -s {l_sec_str} -S {side} -t {self.tech[side]} -o {db.opc_dict['TP'][side]} && {opcserver.original_run_command}" 
         print(opcserver.run_command)
