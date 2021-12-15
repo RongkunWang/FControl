@@ -29,14 +29,15 @@ class TPCtrlPanel(CtrlPanel):
             rb2 = QRadioButton("mm")
             rb3 = QRadioButton("stgc")
             l_rb = [rb1, rb2, rb3]
+            # setting the checkboxes first
             @QtCore.pyqtSlot()
             def setter(rb):
                 self.det = rb.text()
             for rb in l_rb:
                 rb.toggled.connect(partial(setter, rb))
-                print(rb.text())
+                #  print(rb.text())
                 if rb.text() == self.det:
-                    print("match")
+                    #  print("match")
                     rb.setChecked(True)
             vbox = QHBoxLayout()
             vbox.addWidget(rb1)
@@ -81,6 +82,7 @@ class TPCtrlPanel(CtrlPanel):
 
     def __init__(self, *args):
         QWidget.__init__(self)
+        #  self.setStyleSheet(" background-color:cyan")
         self.layout_main2 = QGridLayout(self)
         self.layout_main = QGridLayout()
 
@@ -167,8 +169,8 @@ class TPCtrlPanel(CtrlPanel):
             l_sec_str = [0]
         
         flxserver.init_command = f"{flxserver.original_init_command} && /atlas-home/1/rowang/NSW/elink/feconf.py -s {l_sec_str} -i -t {self.tech[side]}" 
-        print(flxserver.init_command)
+        #  print(flxserver.init_command)
         opcserver.run_command = f"{opcserver.original_init_command} && /atlas-home/1/rowang/NSW/opc/generate.py -s {l_sec_str} -S {side} -t {self.tech[side]} -o {db.opc_dict['TP'][side]} && {opcserver.original_run_command}" 
-        print(opcserver.run_command)
+        #  print(opcserver.run_command)
         pass
     pass
