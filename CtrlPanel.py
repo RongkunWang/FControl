@@ -14,6 +14,11 @@ from CommandSender import CommandSender
 USER = os.environ["USER"]
 
 class CtrlPanel(QWidget, OpcFlxRelation):
+    # stopped 0
+    # stable 1
+    # communicating 2
+    # fatal 3
+    serverStatus = QtCore.pyqtSignal(int)
     def __init__(self, parent, det = "MM", side = 1, do_mainlayout = True):
         self.parent = parent
         sside = "C" if (side == 2) else "A"
@@ -25,6 +30,10 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.cs = CommandSender(db.getLog(USER, det, sside))
         self.det = det
 
+
+        self.s_server_stable        = set()
+        self.s_server_communicating = set()
+        self.s_server_fatal         = set()
 
         self.l_flx_cb      = {}
         self.l_flx_ini_but = {}
@@ -117,8 +126,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         for flx, server in self.return_list_flx().items():
             server.cs = self.cs
             # TODO: do things based on catching
-            server.stableSignal.connect(partial(print, "ready received"))
-            server.communicatingSignal.connect(partial(print, "communicating received"))
+            server.serverStatus.connect(partial(self.update_server_status))
             #  server.init_jobname = self.init_flx_jobname(flx)
             #  server.run_jobname = self.flx_jobname(flx)
 
@@ -173,8 +181,8 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         nrow = 1
         for sector, server in self.return_list_opc().items():
             server.set_commands(self.det, sector)
+            server.serverStatus.connect(partial(self.update_server_status))
             server.cs = self.cs
-            #  server.run_jobname = self.opc_jobname(sector)
 
             rowspan = len(server.l_flx)
 
@@ -254,6 +262,40 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             for flx in self.l_opc[name].l_flx:
                 l_flx_cb.append(self.l_flx_cb[flx])
             cb.stateChanged.connect(partial(toggle_flx_checkbox, name, l_flx_cb))
+
+    @QtCore.pyqtSlot(int)
+    def update_server_status(self, status):
+        server = self.sender()
+        jobname = server.run_jobname
+        if status == 0:
+            self.s_server_stable.discard(jobname)
+            self.s_server_communicating.discard(jobname)
+            self.s_server_fatal.discard(jobname)
+            pass
+        elif status == 1:
+            self.s_server_stable.add(jobname)
+            self.s_server_communicating.discard(jobname)
+            self.s_server_fatal.discard(jobname)
+            pass
+        elif status == 2:
+            self.s_server_stable.discard(jobname)
+            self.s_server_communicating.add(jobname)
+            self.s_server_fatal.discard(jobname)
+            pass
+        elif status == 3:
+            self.s_server_stable.discard(jobname)
+            self.s_server_communicating.discard(jobname)
+            self.s_server_fatal.add(jobname)
+            pass
+        if len(self.s_server_fatal) > 0 :
+            self.serverStatus.emit(3)
+        elif len(self.s_server_communicating) > 0 :
+            self.serverStatus.emit(2)
+        elif len(self.s_server_stable) > 0 :
+            self.serverStatus.emit(1)
+        else:
+            self.serverStatus.emit(0)
+        pass
 
     def quit(self):
         self.cs.stop_all()

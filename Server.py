@@ -18,6 +18,9 @@ class ServerState(Enum):
 
 class Server(QWidget):
     class LogChecker(QWidget):
+        """
+        the log checker window for log()
+        """
         closed = pyqtSignal()
         def __init__(self):
             super(Server.LogChecker, self).__init__()
@@ -27,8 +30,11 @@ class Server(QWidget):
             pass
         pass
 
-    stableSignal = pyqtSignal()
-    communicatingSignal = pyqtSignal()
+    # stopped 0
+    # stable 1
+    # communicating 2
+    # fatal 3
+    serverStatus = pyqtSignal(int)
     def __init__(self, 
             hostname, 
             command_name,
@@ -241,11 +247,11 @@ class Server(QWidget):
         index = 0
         for i, var in enumerate(data):
             if "@@@@@@@@@@@" in var and i == 0:
-                print("@@@ found")
+                #  print("@@@ found")
                 host_key_changed = True
                 continue
             if (host_key_changed) and ("X11 forwarding is disabled" in var):
-                print("middle")
+                #  print("middle")
                 index = i+1
                 break
 
@@ -291,7 +297,7 @@ class Server(QWidget):
         """
         utilities.set_button_color(self.run_ind, Qt.yellow)
         if self._state != ServerState.Communicating:
-            self.communicatingSignal.emit()
+            self.serverStatus.emit(2)
             self._state = ServerState.Communicating
 
     def stable(self, but = None):
@@ -303,13 +309,8 @@ class Server(QWidget):
             but = self.run_ind
         utilities.set_button_color(but, color)
         if self._state != ServerState.Stable:
-            self.stableSignal.emit()
+            self.serverStatus.emit(1)
             self._state = ServerState.Stable
-
-
-
-    #  def stop(self, ):
-        #  pass
 
 
     @pyqtSlot()
@@ -327,6 +328,7 @@ class Server(QWidget):
 
         @pyqtSlot()
         def stop_job(*args):
+            self.serverStatus.emit(0)
             self.set_enable_state()
             utilities.set_button_color(self.run_ind)
             self.monitor(False)
@@ -420,7 +422,10 @@ class Server(QWidget):
             self._fileLog.close()
             self._fileLog = None
             self._textLog = None
-            self._readTimer.timeout.disconnect()
+            try:
+                self._readTimer.timeout.disconnect()
+            except TypeError:
+                print("exception when disconnect, continue")
 
     def monitor(self, start = True):
         """
@@ -480,7 +485,7 @@ class Server(QWidget):
             if self._textLog:
                 self._textLog.append(line)
             else:
-                print(line)
+                #  print(line)
                 pass
             pass
         pass
