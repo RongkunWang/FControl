@@ -35,7 +35,7 @@ You'll see a window like below.
 ### initialization 
 1. Click the initialization button for felix server, this will run
    1. setup felix environment(for the `ssh` script).
-   1. do `elinkconfig` and `flx-init` for all devices properly (effectively `/det/nsw/felix-configuration/nsw_felix_config.sh` for non-TP felix)
+   1. do `elinkconfig` and `flx-init` for all devices properly (effectively `/det/nsw/felix-configuration/nsw_felix_config.sh -n` for non-TP felix)
    1. do `/atlas-home/0/ptzanis/Documents/conf_l1ddc.sh` for non-TP felix
 
 ### run
