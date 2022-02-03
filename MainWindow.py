@@ -98,14 +98,16 @@ class MainWindow(QMainWindow):
     def update_server_status(self, status):
         idx = self.tabs.indexOf(self.sender())
         if status == 0:
-            self.tabs.tabBar().d_color.pop(idx)
+            # for some reason multiple 0 signal is emitted, catch here
+            if idx in self.tabs.tabBar().d_color:
+                self.tabs.tabBar().d_color.pop(idx)
         elif status == 1:
             self.tabs.tabBar().d_color[idx] = QtCore.Qt.green
         elif status == 2:
             self.tabs.tabBar().d_color[idx] = QtCore.Qt.yellow
         elif status == 3:
             self.tabs.tabBar().d_color[idx] = QtCore.Qt.red
-        #  self.tabs.tabBar().paintEvent(QPaintEvent(self.tabs.tabBar().m_pereg))
+        # should call paintEvent
         self.tabs.tabBar().update()
         pass
 
