@@ -1,4 +1,3 @@
-
 [[_TOC_]]
 
 # FControl
@@ -47,3 +46,7 @@ You'll see a window like below.
 ### Advanced:
 
 1. The terminal will return you full command that you sent over `ssh`. 
+1. The log files exist in `/shared/data/<your user name>/FControl/<directories>
+
+# Acknowledge 
+Many thanks to Simone, Peter, Henri et al for testing this software. See here for their [ratings](Acknowledgement/mention.md)!
