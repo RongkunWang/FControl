@@ -22,8 +22,10 @@ class Server(QWidget):
         the log checker window for log()
         """
         closed = pyqtSignal()
-        def __init__(self):
+        def __init__(self, logname):
             super(Server.LogChecker, self).__init__()
+            self.resize(1200, 800)
+            self.setWindowTitle(f"log {logname}")
 
         def closeEvent(self, event): 
             self.closed.emit()
@@ -57,6 +59,9 @@ class Server(QWidget):
         self._original_run_command = run_server_command
         self._check_running_command = check_running_command
         self._kill_command = kill_cmd
+
+        self.last_cmd = "run"
+        #  self.log_name = self.run_jobname
 
         self.l_window = []
         # 0 not running 1 ready 2 communicating 3 error
@@ -222,6 +227,9 @@ class Server(QWidget):
         def stop_job(*args):
             utilities.set_button_color(self.init_ind)
             self.set_enable_state()
+            #  self.NotRunning()
+            self.serverStatus.emit(0)
+        self.last_cmd = "init"
         self.cs.send_command(self.init_jobname, 
                 self.init_jobname, 
                 self.hostname,
@@ -336,6 +344,7 @@ class Server(QWidget):
                 QMessageBox.warning(self, "Server killed", 
                         f"Oops, someone killed your {self.run_jobname}, or it died. \nOr there's something wrong with the config(contact {db.author} if you suspect it's the case).")
             pass
+        self.last_cmd = "run"
         self.cs.send_command(self.run_jobname, 
                 self.run_jobname, 
                 self.hostname, self.run_command,
@@ -365,8 +374,12 @@ class Server(QWidget):
             getattr(self._textLog.parentWidget(), "raise")()
             return
         # TODO: Qt console
-        full_log = self.cs.full_log(self.run_jobname)
-        if not self.cs.has_job(self.run_jobname):
+        self.log_name = self.run_jobname
+        if self.last_cmd == "init":
+            self.log_name = self.init_jobname
+        full_log = self.cs.full_log(self.log_name)
+
+        if not self.cs.has_job(self.log_name):
             #  not active job
             if full_log.is_file():
                 ret = QMessageBox.question(self, "Found old log",
@@ -385,14 +398,12 @@ class Server(QWidget):
         # QtGui.QDesktopServices.openUrl(QUrl.fromLocalFile( str(full_log) ))
 
         # the better
-        wid = Server.LogChecker()
+        wid = Server.LogChecker(self.log_name)
         #  wid = QWidget(parent)
         #  wid = QDialog(parent)
         #  wid = QtGui.QWindow()
         #  wid.setModal(True)
         #  print(wid.isModal())
-        wid.resize(1200, 800)
-        wid.setWindowTitle(f"log {self.run_jobname}")
         #  wid.setTitle(f"log {self.run_jobname}")
 
         #  widget = QWidget(wid)
@@ -471,9 +482,12 @@ class Server(QWidget):
         """
         asynchronous reading
         #  """
-        if not self._fileLog:
-            self._fileLog = QFile(str(self.cs.full_log(self.run_jobname)))
-            self._fileLog.open(QIODevice.ReadOnly)
+        if self._fileLog:
+            self._fileLog.close()
+
+        #  if not self._fileLog:
+        self._fileLog = QFile(str(self.cs.full_log(self.log_name)))
+        self._fileLog.open(QIODevice.ReadOnly)
 
         # open device
         if not self._fileLog.isOpen():

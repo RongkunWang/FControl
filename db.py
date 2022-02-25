@@ -35,7 +35,8 @@ port_dict["sTGC"] = {}
 flx_dict["TP"] = {}
 port_dict["TP"] = {}
 
-FLX_SETUP = "source /sw/atlas/felix/felix-04-02-00-b4-stand-alone/x86_64-centos7-gcc8-opt/setup.sh"
+#  FLX_SETUP = "source /sw/atlas/felix/felix-04-02-00-b4-stand-alone/x86_64-centos7-gcc8-opt/setup.sh"
+FLX_SETUP = "source /sw/atlas/felix/felix-04-02-00-b7-rm4-stand-alone/x86_64-centos7-gcc8-opt/setup.sh"
 FLX_EXE = "felixcore"
 OPC_EXE_DIR = "/det/dcs/Production/ScaOpcUa/bin/"
 OPC_EXE = "OpcUaScaServer"
