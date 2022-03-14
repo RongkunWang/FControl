@@ -258,6 +258,14 @@ class Server(QWidget):
                 #  print("@@@ found")
                 host_key_changed = True
                 continue
+
+            if "ECDSA key" in var:
+                host_key_changed = True
+                continue
+
+            if "bashrc" in var:
+                continue
+
             if (host_key_changed) and ("X11 forwarding is disabled" in var):
                 #  print("middle")
                 index = i+1
