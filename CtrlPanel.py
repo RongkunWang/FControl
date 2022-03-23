@@ -242,10 +242,10 @@ class CtrlPanel(QWidget, OpcFlxRelation):
                 cb.setCheckState(state)
             pass
         for name, cb in self.l_flx_cb.items():
-            l_cb_opc = []
+            l_cb_opc_tmp = []
             for opc in self.l_flx[name].l_opc:
-                l_cb_opc.append(self.l_opc_cb[opc])
-            cb.stateChanged.connect(partial(toggle_opc_checkbox, name, l_cb_opc))
+                l_cb_opc_tmp.append(self.l_opc_cb[opc])
+            cb.stateChanged.connect(partial(toggle_opc_checkbox, name, l_cb_opc_tmp))
 
         @QtCore.pyqtSlot(int)
         def toggle_flx_checkbox(opc, l_cb, state):
@@ -258,10 +258,10 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             for cb in l_cb:
                 cb.setCheckState(state)
         for name, cb in self.l_opc_cb.items():
-            l_flx_cb = []
+            l_flx_cb_tmp = []
             for flx in self.l_opc[name].l_flx:
-                l_flx_cb.append(self.l_flx_cb[flx])
-            cb.stateChanged.connect(partial(toggle_flx_checkbox, name, l_flx_cb))
+                l_flx_cb_tmp.append(self.l_flx_cb[flx])
+            cb.stateChanged.connect(partial(toggle_flx_checkbox, name, l_flx_cb_tmp))
 
     @QtCore.pyqtSlot(int)
     def update_server_status(self, status):
