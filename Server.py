@@ -421,6 +421,9 @@ class Server(QWidget):
         lay.addWidget(self._textLog)
         wid.show()
 
+        if self._fileLog:
+            self._fileLog.close()
+
         # do it first before the timeout ends
         self.read()
 
@@ -490,12 +493,11 @@ class Server(QWidget):
         """
         asynchronous reading
         #  """
-        if self._fileLog:
-            self._fileLog.close()
 
-        #  if not self._fileLog:
-        self._fileLog = QFile(str(self.cs.full_log(self.log_name)))
-        self._fileLog.open(QIODevice.ReadOnly)
+        if not self._fileLog:
+            #  if not self._fileLog:
+            self._fileLog = QFile(str(self.cs.full_log(self.log_name)))
+            self._fileLog.open(QIODevice.ReadOnly)
 
         # open device
         if not self._fileLog.isOpen():
