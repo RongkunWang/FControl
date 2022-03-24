@@ -6,9 +6,10 @@ import signal
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QUrl, QIODevice, QFile, QTimer
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMessageBox, QTextBrowser
+from PyQt5.QtWidgets import QWidget, QMessageBox
 
 import utilities, db
+from LogChecker import LogChecker
 
 class ServerState(Enum):
     NotRunning = 0
@@ -17,20 +18,6 @@ class ServerState(Enum):
     Error = 3
 
 class Server(QWidget):
-    class LogChecker(QWidget):
-        """
-        the log checker window for log()
-        """
-        closed = pyqtSignal()
-        def __init__(self, logname):
-            super(Server.LogChecker, self).__init__()
-            self.resize(1200, 800)
-            self.setWindowTitle(f"log {logname}")
-
-        def closeEvent(self, event): 
-            self.closed.emit()
-            pass
-        pass
 
     # stopped 0
     # stable 1
@@ -416,20 +403,8 @@ class Server(QWidget):
         # QtGui.QDesktopServices.openUrl(QUrl.fromLocalFile( str(full_log) ))
 
         # the better
-        wid = Server.LogChecker(self.log_name)
-        #  wid = QWidget(parent)
-        #  wid = QDialog(parent)
-        #  wid = QtGui.QWindow()
-        #  wid.setModal(True)
-        #  print(wid.isModal())
-        #  wid.setTitle(f"log {self.run_jobname}")
-
-        #  widget = QWidget(wid)
-
-        self._textLog = QTextBrowser(wid)
-        lay = QHBoxLayout(wid)
-        lay.addWidget(self._textLog)
-        wid.show()
+        wid = LogChecker(self.log_name)
+        self._textLog = wid.textLog
 
         if self._fileLog:
             self._fileLog.close()
@@ -519,7 +494,6 @@ class Server(QWidget):
             if self._textLog:
                 self._textLog.append(line)
             else:
-                #  print(line)
                 pass
             pass
         pass
