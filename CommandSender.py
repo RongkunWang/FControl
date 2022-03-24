@@ -27,13 +27,14 @@ class CommandSender(QWidget, ):
     def full_log(self, name):
         return self.log_dir / name
 
-    def send_command(self, name, log_file, host, cmd, finish_func = None, state_changed_func = None, toFile = True):
+    def send_command(self, name, log_file, host, cmd, finish_func = None, state_changed_func = None, toFile = True, shell = True):
         print("\nstarting command", name, cmd)
 
         self.d_log_file[name] = self.log_dir / log_file
 
         #  CMD = f"ssh -o StrictHostKeyChecking=no -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\""
-        CMD = f"ssh -o StrictHostKeyChecking=no -t -t {host} \"{cmd}\""
+        CMD = f"""ssh -o StrictHostKeyChecking=no {"-t -t" if shell else ""} {host} "{cmd}" """
+        print(CMD)
 
         # QProcess
         job = QProcess()

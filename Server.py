@@ -266,6 +266,7 @@ class Server(QWidget):
             if "bashrc" in var:
                 continue
 
+
             if (host_key_changed) and ("X11 forwarding is disabled" in var):
                 #  print("middle")
                 index = i+1
@@ -275,6 +276,15 @@ class Server(QWidget):
                 index = i+1
                 break
 
+            if "Setting up FELIX" in var:
+                index = i+1
+                continue
+            if "Did not find" in var:
+                index = i+1
+                continue
+            if "Using" in var:
+                index = i+1
+                continue
             pass
         return data[index:]
 
