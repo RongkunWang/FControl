@@ -140,8 +140,8 @@ opc_dict["MM"]["C14"] = OPC_MMC_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-mm-11_{p
 opc_dict["MM"]["C15"] = OPC_MMC_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-mm-11_{port_dict["MM"]["C15"]}_MMG_C15_OLDNAMING.xml"""
 opc_dict["MM"]["C16"] = OPC_MMC_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-mm-11_{port_dict["MM"]["C16"]}_MMG_C16_OLDNAMING.xml"""
 
-OPC_STGCA_DIR = "/det/dcs/Development/ATLAS_DCS_STG/ATLSTGELTXA/config/"
-OPC_STGCC_DIR = "/det/dcs/Development/ATLAS_DCS_STG/ATLSTGELTXC/config/"
+OPC_STGCA_DIR = "/det/dcs/Production/ATLAS_DCS_STG/ATLSTGELTXA/config/XMLfiles_felixcore/"
+OPC_STGCC_DIR = "/det/dcs/Production/ATLAS_DCS_STG/ATLSTGELTXC/config/XMLfiles_felixcore/"
 opc_dict["sTGC"]["A01"] = OPC_STGCA_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-stgc-00_{port_dict["sTGC"]["A01"]}_STG_A1_OLDNAMING.xml"""
 opc_dict["sTGC"]["A02"] = OPC_STGCA_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-stgc-00_{port_dict["sTGC"]["A02"]}_STG_A2_OLDNAMING.xml"""
 opc_dict["sTGC"]["A03"] = OPC_STGCA_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-stgc-01_{port_dict["sTGC"]["A03"]}_STG_A3_OLDNAMING.xml"""
@@ -176,7 +176,7 @@ opc_dict["sTGC"]["C15"] = OPC_STGCC_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-stgc
 opc_dict["sTGC"]["C16"] = OPC_STGCC_DIR + f"""ScaOpcUaServer_pc-tdq-flx-nsw-stgc-15_{port_dict["sTGC"]["C16"]}_STG_C16_OLDNAMING.xml"""
 
 def OpcPortFile(port):
-    return f"--opcua_backend_config /det/dcs/Development/ATLAS_DCS_MUO/muoNswEltxScaOpcConfigTemplates/ServerConfig_{port}.xml"
+    return f"--opcua_backend_config /det/dcs/Production/ATLAS_DCS_MUO/muoNswEltxScaOpcConfigTemplates/ServerConfig_{port}.xml"
 
 if __name__ == "__main__":
     for det, dic in opc_dict.items():
