@@ -86,21 +86,28 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         #########################################
         # buttons for checked servers
         #########################################
+
         self.cb_all_flx = QCheckBox("All felix")
         self.cb_all_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.cb_all_flx, 0, 0, 1, 1)
+
         self.but_init_all_selected_flx = QPushButton("Init checked flx")
-        self.but_init_all_selected_flx.setEnabled(False)
+        self.but_init_all_selected_flx.setEnabled(True)
         self.but_init_all_selected_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_init_all_selected_flx, 0, 1, 1, 1)
+        self.but_init_all_selected_flx.clicked.connect(partial(self.loop_checked_servers, "flx", "init"))
+        
         self.but_start_all_selected_flx = QPushButton("Start checked servers")
-        self.but_start_all_selected_flx.setEnabled(False)
+        self.but_start_all_selected_flx.setEnabled(True)
         self.but_start_all_selected_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_start_all_selected_flx, 0, 2, 1, 1)
+        self.but_start_all_selected_flx.clicked.connect(partial(self.loop_checked_servers, "flx", "run"))
+        
         self.but_stop_all_selected_flx = QPushButton("Stop checked servers")
-        self.but_stop_all_selected_flx.setEnabled(False)
+        self.but_stop_all_selected_flx.setEnabled(True)
         self.but_stop_all_selected_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_stop_all_selected_flx, 0, 3, 1, 1)
+        self.but_stop_all_selected_flx.clicked.connect(partial(self.loop_checked_servers, "flx", "stop"))
 
         self.but_check_all_selected_flx = QPushButton("Check felix link")
         self.but_check_all_selected_flx.setEnabled(False)
@@ -110,20 +117,25 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.cb_all_opc = QCheckBox("All opc")
         self.cb_all_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.cb_all_opc, 0, db.ncolflx, 1, 1)
+        
         self.but_start_all_selected_opc = QPushButton("Start checked opc")
-        self.but_start_all_selected_opc.setEnabled(False)
+        self.but_start_all_selected_opc.setEnabled(True)
         self.but_start_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_start_all_selected_opc, 0, db.ncolflx + 1, 1, 1)
+        self.but_start_all_selected_opc.clicked.connect(partial(self.loop_checked_servers, "opc", "run"))
+        
         self.but_stop_all_selected_opc = QPushButton("Stop checked opc")
-        self.but_stop_all_selected_opc.setEnabled(False)
+        self.but_stop_all_selected_opc.setEnabled(True)
         self.but_stop_all_selected_opc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_stop_all_selected_opc, 0, db.ncolflx + 2, 1, 1)
+        self.but_stop_all_selected_opc.clicked.connect(partial(self.loop_checked_servers, "opc", "stop"))
 
         #########################################
         # individual buttons
         #########################################
         nrow = 1
         for flx, server in self.return_list_flx().items():
+            
             server.cs = self.cs
             # TODO: do things based on catching
             server.serverStatus.connect(partial(self.update_server_status))
@@ -296,6 +308,38 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         else:
             self.serverStatus.emit(0)
         pass
+
+    # Loop over checked servers and perform the task for each
+    def loop_checked_servers(self, server_type = None, task=None): 
+
+        if server_type == "flx":
+            for (server_name, check_box) in self.l_flx_cb.items():
+                if check_box.checkState():
+                    server_obj = self.return_list_flx()[server_name]
+                    if task == "init":
+                        server_obj.init()
+                    elif task == "run":
+                        server_obj.run()
+                    elif task == "stop":
+                        server_obj.stop()
+                    else:
+                        pass
+
+        elif server_type == "opc":
+            for (server_name, check_box) in self.l_opc_cb.items():
+                if check_box.checkState():
+                    server_obj = self.return_list_opc()[server_name]
+                    if task == "run":
+                        server_obj.run()
+                    elif task == "stop":
+                        server_obj.stop()
+                    else:
+                        pass
+        
+        else:
+            pass
+
+        return None
 
     def quit(self):
         self.cs.stop_all()
