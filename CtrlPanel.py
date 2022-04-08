@@ -5,7 +5,7 @@ import os
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QWidget, QPushButton, QGridLayout, QSizePolicy,
-        QCheckBox, QMessageBox)
+        QCheckBox, QMessageBox, QComboBox)
 
 import db, utilities
 from OpcFlxRelation import OpcFlxRelation
@@ -22,14 +22,20 @@ class CtrlPanel(QWidget, OpcFlxRelation):
     serverStatus = QtCore.pyqtSignal(int)
     def __init__(self, parent, det = "MM", side = 1, do_mainlayout = True):
         self.parent = parent
-        sside = "C" if (side == 2) else "A"
+        self.det = det
+        self.side = side
+
+        self.sside = "C" if (side == 2) else "A"
         if do_mainlayout:
             QWidget.__init__(self)
             self.layout_main = QGridLayout(self)
         OpcFlxRelation.__init__(self)
 
-        self.cs = CommandSender(db.getLog(USER, det, sside))
-        self.det = det
+        self.cs = CommandSender(db.getLog(USER, det, self.sside))
+
+
+        self.l_thread = {}
+        self.l_worker = {}
 
 
         self.s_server_stable        = set()
@@ -47,19 +53,13 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.l_opc_stp_but = {}
         self.l_opc_log_but  = {}
 
-        for sector, l_flx in db.flx_dict[self.det].items():
-            if side == 3:
-                self.add_opc_flx(sector, l_flx)
-                continue
-            if (side == 1 and "C" in sector) or (side == 2 and "A" in sector):
-                continue
-            self.add_opc_flx(sector, l_flx)
+        self.add_all()
 
         #########################################
         # global buttons
         #########################################
         self.layout_but = QGridLayout()
-        self.layout_main.addLayout(self.layout_but, 2, 0, 1, db.ncol)
+        self.layout_main.addLayout(self.layout_but, 3, 0, 1, db.ncol)
 
         #  self.but_init_all = QPushButton("setup all selected felix")
         #  self.but_init_all.setEnabled(False)
@@ -84,6 +84,15 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.but_restart_failed.setEnabled(False)
         self.but_restart_failed.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_main.addWidget(self.but_restart_failed, 0, 2, 1, 1)
+
+        self.flx_init_type = QComboBox()
+        self.flx_init_type_list = []
+        self.flx_init_type.addItem("init flx: sca_only")
+        self.flx_init_type_list.append("supervisorctl start sca_only:*")
+        self.flx_init_type.addItem("init flx: gbt")
+        self.flx_init_type_list.append("supervisorctl start gbt:*")
+        self.layout_main.addWidget(self.flx_init_type, 1, 0, 1, 1)
+        
 
         self.but_clear_cache = QPushButton("Clear Cache(potentially large!)")
         self.but_clear_cache.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -114,7 +123,6 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.but_stop_all_selected_flx.clicked.connect(partial(self.loop_checked_servers, "flx", "stop"))
 
         self.but_check_all_selected_flx = QPushButton("Check felix link")
-        self.but_check_all_selected_flx.setEnabled(False)
         self.but_check_all_selected_flx.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_but.addWidget(self.but_check_all_selected_flx, 0, 4, 1, 1)
 
@@ -132,6 +140,16 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.layout_but.addWidget(self.but_stop_all_selected_opc, 0, db.ncolflx + 2, 1, 1)
         self.but_stop_all_selected_opc.clicked.connect(partial(self.loop_checked_servers, "opc", "stop"))
 
+
+
+        class Worker(QtCore.QObject):
+            finished = QtCore.pyqtSignal()
+            def __init__(self, server):
+                super().__init__()
+                self.server = server
+            def run(self):
+                self.server.check_and_hold()
+
         #########################################
         # individual buttons
         #########################################
@@ -140,8 +158,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             server.cs = self.cs
             # TODO: do things based on catching
             server.serverStatus.connect(partial(self.update_server_status))
-            #  server.init_jobname = self.init_flx_jobname(flx)
-            #  server.run_jobname = self.flx_jobname(flx)
+            server.monitor()
 
             rowspan = len(self.kill_chain_flx(flx)[1])
 
@@ -158,7 +175,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             but.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.l_flx_ini_but[flx] =  but 
             self.layout_but.addWidget( self.l_flx_ini_but[flx], nrow, 1, rowspan, 1)
-            but.clicked.connect(partial(server.init))
+            but.clicked.connect(partial(self.init_modified, server))
             server.init_ind = but
             server.init_controller = but
 
@@ -193,9 +210,20 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
         nrow = 1
         for sector, server in self.return_list_opc().items():
-            server.set_commands(self.det, sector)
+            #  server.set_commands(self.det, sector)
             server.serverStatus.connect(partial(self.update_server_status))
             server.cs = self.cs
+            server.monitor()
+
+            #  self.l_thread[sector] = QtCore.QThread() 
+            #  self.l_worker[sector] = Worker(server) 
+            #  self.l_worker[sector].moveToThread(self.l_thread[sector])
+            #  # working and blocking       
+            #  self.l_thread[sector].started.connect(server.check_and_hold)
+            #  self.l_worker[sector].finished.connect(self.l_thread[sector].quit)
+            #  self.l_worker[sector].finished.connect(self.l_worker[sector].deleteLater)
+            #  self.l_thread[sector].finished.connect(self.l_thread[sector].deleteLater)
+            #  self.l_thread[sector].start()
 
             rowspan = len(server.l_flx)
 
@@ -312,7 +340,10 @@ class CtrlPanel(QWidget, OpcFlxRelation):
 
     @QtCore.pyqtSlot()
     def check_gbtx(self):
-        self._widLogGBTx = LogChecker("GBTx Alignment Checker")
+        marker = f"{self.det}-{self.sside}"
+        if self.det == "TP":
+            marker = "TP"
+        self._widLogGBTx = LogChecker(f"GBTx Alignment Checker {marker}")
         self._gbtxCounter = 0
         for name, cb in self.l_flx_cb.items():
             if not cb.isChecked(): continue
@@ -372,6 +403,10 @@ class CtrlPanel(QWidget, OpcFlxRelation):
                                     self._widLogGBTx.textLog.setTextColor(QtCore.Qt.green)
                                     self._widLogGBTx.textLog.insertPlainText("{0: <6}".format(w))
                                     self._widLogGBTx.textLog.setTextColor(QtCore.Qt.black)
+                                elif "Err" in w:
+                                    self._widLogGBTx.textLog.setTextColor(QtCore.Qt.red)
+                                    self._widLogGBTx.textLog.insertPlainText("{0: <6}".format(w))
+                                    self._widLogGBTx.textLog.setTextColor(QtCore.Qt.black)
                                 else:
                                     self._widLogGBTx.textLog.insertPlainText("{0: <6}".format(w))
                             self._widLogGBTx.textLog.insertPlainText("\n")
@@ -382,7 +417,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
                 self._widLogGBTx.textLog.insertPlainText("\n")
                 pass
         timer = QtCore.QTimer()
-        timer.start(500)
+        timer.start(50)
         timer.timeout.connect(partial(check_finished, timer))
         pass
 
@@ -390,29 +425,27 @@ class CtrlPanel(QWidget, OpcFlxRelation):
     def loop_checked_servers(self, server_type = None, task=None):
         if server_type == "flx":
             for (server_name, check_box) in self.l_flx_cb.items():
-                if check_box.checkState():
-                    server_obj = self.return_list_flx()[server_name]
-                    if task == "init":
-                        server_obj.init()
-                    elif task == "run":
-                        server_obj.run()
-                    elif task == "stop":
-                        server_obj.stop()
-                    else:
-                        pass
+                if not check_box.checkState(): continue
+                server_obj = self.return_list_flx()[server_name]
+                if task == "init":
+                    self.init_modified(server_obj)
+                elif task == "run":
+                    server_obj.run()
+                elif task == "stop":
+                    server_obj.stop()
+                else:
                     pass
                 pass
             pass
         elif server_type == "opc":
             for (server_name, check_box) in self.l_opc_cb.items():
-                if check_box.checkState():
-                    server_obj = self.return_list_opc()[server_name]
-                    if task == "run":
-                        server_obj.run()
-                    elif task == "stop":
-                        server_obj.stop()
-                    else:
-                        pass
+                if not check_box.checkState(): continue
+                server_obj = self.return_list_opc()[server_name]
+                if task == "run":
+                    server_obj.run()
+                elif task == "stop":
+                    server_obj.stop()
+                else:
                     pass
                 pass
             pass
@@ -420,8 +453,13 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             pass
         return None
 
+    def init_modified(self, server):
+        server.init_command = f"{server.original_init_command} && {self.flx_init_type_list[self.flx_init_type.currentIndex()]}"
+        server.init()
+
     def quit(self):
-        self.cs.stop_all()
+        # let supervisord run in the background 
+        #  self.cs.stop_all()
         pass
 
     pass

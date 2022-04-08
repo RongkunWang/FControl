@@ -21,7 +21,7 @@ def git_version():
         #  out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'])
         #  GIT_REVISION = out.strip().decode('ascii')
         app_dir = pathlib.Path(__file__).parent  / ".git"
-        out = _minimal_ext_cmd(['git', f"--git-dir={app_dir}", 'describe'])
+        out = _minimal_ext_cmd(['git', f"--git-dir={app_dir}", 'describe', '--tags'])
         GIT_REVISION = out.strip().decode('ascii')
     except OSError:
         GIT_REVISION = "Unknown"

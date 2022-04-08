@@ -87,14 +87,15 @@ class TPCtrlPanel(CtrlPanel):
         self.layout_main = QGridLayout()
 
         self.flx_host = {
-                "A": db.flx_dict["TP"]["A"][0], 
-                "C": db.flx_dict["TP"]["C"][0], 
+                "A": db.flx_dict["TP"]["MM-A"][0], 
+                "C": db.flx_dict["TP"]["MM-C"][0], 
                 }
         self.enabled = {"A":[], "C":[]}
         self.tech = {"A":"comb", "C":"comb"}
 
 
         self.sel_sec_A = QPushButton("Select A sectors")
+        self.sel_sec_A.setEnabled(False)
         self.sel_sec_A.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.sel_sec_A.clicked.connect(partial(self.resolve_sectors, "A"))
         self.layout_main2.addWidget(self.sel_sec_A, 0, 0, 1, 1)
@@ -104,14 +105,13 @@ class TPCtrlPanel(CtrlPanel):
         self.layout_main2.addWidget(self.label["A"], 0, 1, 1, 3)
 
         self.sel_sec_C = QPushButton("Select C sectors")
+        self.sel_sec_C.setEnabled(False)
         self.sel_sec_C.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.sel_sec_C.clicked.connect(partial(self.resolve_sectors, "C"))
         self.layout_main2.addWidget(self.sel_sec_C, 0, 4, 1, 1)
 
         self.label["C"] = QLabel("Current: comb ")
         self.layout_main2.addWidget(self.label["C"], 0, 5, 1, 3)
-
-
 
         self.part_name = QComboBox()
         self.part_name.addItem("part-NSW-MMTP-SideA")
