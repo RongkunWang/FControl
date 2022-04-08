@@ -27,23 +27,28 @@ class CommandSender(QWidget, ):
     def full_log(self, name):
         return self.log_dir / name
 
-    def send_command(self, name, log_file, host, cmd, finish_func = None, state_changed_func = None, toFile = True, shell = True):
-        print("\nstarting command", name, cmd)
+    def send_command(self, name, log_file, host, cmd, finish_func = None, state_changed_func = None, toFile = True, shell = True, quiet = False, thread = None):
+        if not quiet:
+            print("\nstarting command", name, cmd)
 
         self.d_log_file[name] = self.log_dir / log_file
 
         #  CMD = f"ssh -o StrictHostKeyChecking=no -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\""
-        CMD = f"""ssh -o StrictHostKeyChecking=no {"-t -t" if shell else ""} {host} "{cmd}" """
-        print(CMD)
+        CMD = f"""ssh -o StrictHostKeyChecking=no {"-t -t" if shell else ""} {host} '{cmd}' """
+        if not quiet:
+            print(CMD)
 
         # QProcess
         job = QProcess()
+        if thread:
+            #  job.moveToThread(thread)
+            pass
         job.setProcessChannelMode( QProcess.MergedChannels ) 
         if toFile:
             job.setStandardOutputFile( str(self.d_log_file[name]), QIODevice.Truncate | QIODevice.ReadWrite )
         #  job.setProgram(CMD)
         #  job.start(QIODevice.ReadWrite)
-        job.start(CMD)
+        job.start("bash", ["-c", CMD]) # huge improvement
 
         def finish_action(*args):
             self.stop_command(name)
@@ -63,6 +68,8 @@ class CommandSender(QWidget, ):
         pass
 
     def check_size(self, name):
+        if not self.has_job(name):
+            return -1
         s = os.path.getsize(self.d_log_file[name])
         self.d_log_size[name] = s
         return s
@@ -71,7 +78,7 @@ class CommandSender(QWidget, ):
         if not self.has_job(name):
             # TODO: this is called twice sometimes..
             return
-        print("\nstopping command", name)
+        #  print("\nstopping command", name)
         self.d_running_command[name].terminate()
 
         del self.d_running_command[name]

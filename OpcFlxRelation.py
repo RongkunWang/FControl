@@ -1,5 +1,6 @@
 from FlxServer import FlxServer
 from OpcScaServer import OpcScaServer
+import db
 
 # Abstract
 class OpcFlxRelation:
@@ -13,6 +14,16 @@ class OpcFlxRelation:
     def return_list_flx(self,):
         return self.l_flx
 
+    def add_all(self):
+        for sector, l_flx in db.flx_dict[self.det].items():
+            if self.side == 3:
+                self.add_opc_flx(sector, l_flx)
+                continue
+            if (self.side == 1 and "C" in sector) or (self.side == 2 and "A" in sector):
+                continue
+            self.add_opc_flx(sector, l_flx)
+        pass
+
     def add_opc_flx(self, opc, l_flx):
         """
         set up how an opc(sector) is relied on an felix.
@@ -25,7 +36,9 @@ class OpcFlxRelation:
         killing the corresponding felix will kill all related opc
         """
         flx = l_flx[0]
-        self.l_opc[opc] = OpcScaServer(flx)
+        self.l_opc[opc] = OpcScaServer(flx, db.port_dict[self.det][opc])
+        self.l_opc[opc].run_jobname = opc
+
         for flx in l_flx:
             if flx not in self.l_flx:
                 self.l_flx[flx] = FlxServer(flx)

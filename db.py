@@ -4,6 +4,7 @@ import opc_mapping
 import os
 USER = os.environ["USER"]
 author = "Rongkun Wang <rongkun.wang@cern.ch>"
+DEBUG = False
 
 
 def getLog(USER, det, sside = "A"):
@@ -36,9 +37,11 @@ flx_dict["TP"] = {}
 port_dict["TP"] = {}
 
 FLX_SETUP = "source /det/nsw/felix-configuration/felix_setup.sh"
-FLX_EXE = "felixcore"
+# seems unused now
 OPC_EXE_DIR = "/det/nsw/sw/OpcUaScaServer/current/bin"
-OPC_EXE = "OpcUaScaServer"
+# just supervisorctl groups
+FLX_EXE = "felix-star"
+OPC_EXE = "opcservers"
 
 # TODO: felix-id and interface configurable
 flx_arg = { "pc-tdq-flx-nsw-mm-{0:02d}.cern.ch".format(key) : "--data-interface vlan413" for key in range(12) }
@@ -82,10 +85,14 @@ for sector, flx in opc_mapping.d_host_stgcc.items():
     port_dict["sTGC"][sector] = port
 
 
-flx_dict["TP"]["A"] = ["pc-tdq-flx-nsw-tp-a-00.cern.ch"]
-flx_dict["TP"]["C"] = ["pc-tdq-flx-nsw-tp-c-00.cern.ch"]
-port_dict["TP"]["A"] = 48020
-port_dict["TP"]["C"] = 48020
+flx_dict["TP"]["MM-A"] = ["pc-tdq-flx-nsw-tp-a-00.cern.ch"]
+flx_dict["TP"]["sTGC-A"] = ["pc-tdq-flx-nsw-tp-a-00.cern.ch"]
+flx_dict["TP"]["MM-C"] = ["pc-tdq-flx-nsw-tp-c-00.cern.ch"]
+flx_dict["TP"]["sTGC-C"] = ["pc-tdq-flx-nsw-tp-c-00.cern.ch"]
+port_dict["TP"]["MM-A"] = "mmtp"
+port_dict["TP"]["MM-C"] = "mmtp"
+port_dict["TP"]["sTGC-A"] = "stgc"
+port_dict["TP"]["sTGC-C"] = "stgc"
 
 
 
@@ -93,14 +100,13 @@ port_dict["TP"]["C"] = 48020
 #################################################
 # OPC
 #################################################
+# TODO: unused now
 opc_dict = {}
 opc_dict["MM"] = {}
 opc_dict["sTGC"] = {}
 opc_dict["TP"] = {}
 opc_dict["TP"]["A"] = f"{TP_log_dir}/TP-A.xml"
 opc_dict["TP"]["C"] = f"{TP_log_dir}/TP-C.xml"
-
-# TODO: auto generate here
 
 OPC_MMA_DIR = "/det/dcs/Production/ATLAS_DCS_MMG/ATLMMGELTXA/config/XMLfiles_felixcore/"
 OPC_MMC_DIR = "/det/dcs/Production/ATLAS_DCS_MMG/ATLMMGELTXC/config/XMLfiles_felixcore/"

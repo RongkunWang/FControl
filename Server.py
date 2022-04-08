@@ -5,7 +5,7 @@ from enum import Enum
 import signal
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QUrl, QIODevice, QFile, QTimer
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QUrl, QIODevice, QFile, QTimer, QThread, QObject
 from PyQt5.QtWidgets import QWidget, QMessageBox
 
 import utilities, db
@@ -18,7 +18,6 @@ class ServerState(Enum):
     Error = 3
 
 class Server(QWidget):
-
     # stopped 0
     # stable 1
     # communicating 2
@@ -47,6 +46,9 @@ class Server(QWidget):
         self._check_running_command = check_running_command
         self._kill_command = kill_cmd
 
+
+        self._check_hold_command = "true"
+
         self.last_cmd = "run"
         #  self.log_name = self.run_jobname
 
@@ -59,7 +61,7 @@ class Server(QWidget):
 
         # ms
         self._server_timeout      = 5000
-        self._server_check_period = 500
+        self._server_check_period = 1
 
         self._fileLog = None 
         self._logSize = -1
@@ -77,6 +79,7 @@ class Server(QWidget):
         self._init_controller = None
         self._run_controller = None
         self._stop_controller = None
+
         pass
 
     def __str__(self):
@@ -99,6 +102,14 @@ class Server(QWidget):
     @init_command.setter
     def init_command(self, name):
         self._init_command = name
+
+    @property
+    def check_hold_command(self):
+        return self._check_hold_command
+    @check_hold_command.setter
+    def check_hold_command(self, name):
+        self._check_hold_command = name
+
 
     @property
     def original_run_command(self):
@@ -184,6 +195,21 @@ class Server(QWidget):
     def stop_controller(self, b):
         self._stop_controller = b
 
+    # supervisord utility return a string to do while loop checking and keep 
+    def check_state(self, cmd, state, filter = ""):
+        return f"""supervisorctl status {cmd} | grep "{state}" | grep "{filter}" """
+
+    #  def all_not(self, cmd, state, filter = ""):
+        #  # if all of the server not in state, quit
+        #  return f"""{self.check_state(cmd, state, filter)}"""
+
+    def hang_until_all_not(self, cmd, state, filter = ""):
+        # if all of the server not in state, quit
+        return f"""while true; do  sleep 1; out=`{self.check_state(cmd, state, filter)}`; if [[ $out == "" ]]; then break; fi; done """
+
+    def hang_until_one_not(self, cmd, state, filter = ""):
+        # if any of the server is not in state, quit
+        return f"""while true; do  sleep 1; n1=`supervisorctl status {cmd} | grep "{filter}" | wc -l`; n2=`supervisorctl status {cmd} | grep "{state}" | grep "{filter}" | wc -l`;  if [[ $n1 != $n2 ]]; then supervisorctl status {cmd} | grep "{state}" | grep "{filter}"; break; fi; done """
 
     # functionality
     def set_enable_state(self, force_disable = False):
@@ -194,22 +220,16 @@ class Server(QWidget):
             self.run_controller.setEnabled(False)
             self.stop_controller.setEnabled(False)
         else:
-            if self.cs.has_job(self.run_jobname):
-                if self.init_controller:
-                    self.init_controller.setEnabled(False)
-                self.run_controller.setEnabled(False)
-                self.stop_controller.setEnabled(True)
-            else:
-                if self.init_controller:
-                    self.init_controller.setEnabled(True)
-                self.run_controller.setEnabled(True)
-                self.stop_controller.setEnabled(False)
+            if self.init_controller:
+                self.init_controller.setEnabled(True)
+            self.run_controller.setEnabled(True)
+            self.stop_controller.setEnabled(True)
         pass
     
     @pyqtSlot()
     def init(self):
-        if not self.check_and_kill():
-            return
+        #  if not self.check_and_kill():
+            #  return
         @pyqtSlot()
         def stop_job(*args):
             utilities.set_button_color(self.init_ind)
@@ -229,17 +249,34 @@ class Server(QWidget):
     def check(self, ):
         check_job_name = f"check_{self.run_jobname}"
         job = self.cs.send_command(check_job_name, check_job_name,
-                self.hostname, self.check_running_command, toFile = False)
+                self.hostname, self.check_running_command, toFile = False, quiet = True, thread = self.thread)
         # TODO: make asynchronous??
-        job.waitForFinished(self._server_timeout)
-        data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
-        data = self.strip(data)
-        print(data)
-        return data
+        #  job.waitForFinished(self._server_timeout)
+        def analyze(job):
+            if not job:
+                self._runTimer.start()
+                return
+            data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
+            data = self.strip(data)
+            if len(data) == 0:
+                self.stopped()
+                pass
+            else: 
+                if db.DEBUG:
+                    print(self.hostname, data)
+                s = self.cs.check_size(self.run_jobname)
+                if self._logSize == s:
+                    self.stable()
+                else:
+                    self.communicating()
+                self._logSize = s
+            self._runTimer.start()
+        job.finished.connect(partial(analyze, job))
 
     def strip(self, data):
         host_key_changed = False
         index = 0
+        last = -1
         for i, var in enumerate(data):
             if "@@@@@@@@@@@" in var and i == 0:
                 #  print("@@@ found")
@@ -250,9 +287,15 @@ class Server(QWidget):
                 host_key_changed = True
                 continue
 
+            #  if "Connection to" in var and "closed" in var:
+                #  continue
+
             if "bashrc" in var:
                 continue
 
+            if f"Connection to {self.hostname} closed." in var:
+                last = i
+                break
 
             if (host_key_changed) and ("X11 forwarding is disabled" in var):
                 #  print("middle")
@@ -263,6 +306,13 @@ class Server(QWidget):
                 index = i+1
                 break
 
+            if "Killed by signal 2" in var:
+                last = i
+                break
+
+            if "xauth" in var:
+                index = i+1
+                continue
             if "Setting up FELIX" in var:
                 index = i+1
                 continue
@@ -273,7 +323,7 @@ class Server(QWidget):
                 index = i+1
                 continue
             pass
-        return data[index:]
+        return data[index:last]
 
     def kill(self, ):
         kill_job_name = f"kill_{self.run_jobname}"
@@ -325,11 +375,23 @@ class Server(QWidget):
             self.serverStatus.emit(1)
             self._state = ServerState.Stable
 
+    def stopped(self):
+        """
+        state indicator
+        """
+        utilities.set_button_color(self.run_ind)
+        if self._state != ServerState.NotRunning:
+            self.serverStatus.emit(0)
+            self._state = ServerState.NotRunning
 
     @pyqtSlot()
     def run(self):
-        if not self.check_and_kill():
-            return
+        #  if not self.check_and_kill():
+            #  return
+        if self.cs.has_job(self.run_jobname):
+            self.active_stop = True
+            self.cs.stop_command(self.run_jobname)
+            self.active_stop = False
 
         # already has text log, meaning the log window is opened
         if self._textLog:
@@ -341,13 +403,14 @@ class Server(QWidget):
 
         @pyqtSlot()
         def stop_job(*args):
-            self.serverStatus.emit(0)
-            self.set_enable_state()
-            utilities.set_button_color(self.run_ind)
-            self.monitor(False)
-            if not self.active_stop:
-                QMessageBox.warning(self, "Server killed", 
-                        f"Oops, someone killed your {self.run_jobname}, or it died. \nOr there's something wrong with the config(contact {db.author} if you suspect it's the case).")
+            #  self.kill()
+            #  self.serverStatus.emit(0)
+            #  self.set_enable_state()
+            #  utilities.set_button_color(self.run_ind)
+            #  self.monitor(False)
+            #  if not self.active_stop:
+                #  QMessageBox.warning(self, "Server killed", 
+                        #  f"Please make sure supervisord is running. \nOr there's something wrong with the config(contact {db.author} if you suspect it's the case).")
             pass
         self.last_cmd = "run"
         self.cs.send_command(self.run_jobname, 
@@ -357,15 +420,19 @@ class Server(QWidget):
         #  self._fileMon = QFile(str(self.cs.full_log(self.run_jobname)))
         #  self._fileMon.open(QIODevice.ReadOnly)
 
-        self.set_enable_state()
-        self.monitor()
+        #  self.set_enable_state()
+        #  self.monitor()
 
         pass
 
     @pyqtSlot()
     def stop(self):
+        """
+        triggered by stop button
+        """
         self.active_stop = True
         self.cs.stop_command(self.run_jobname)
+        state = self.kill()
         self.active_stop = False
         pass
 
@@ -437,23 +504,93 @@ class Server(QWidget):
     def monitor(self, start = True):
         """
         start monitor if start=True, else stop
-        """
 
-        if start == True:
-            self._logSize = -1
-            self._runTimer.start(self._server_check_period)
-            def check_size():
+        do not use start now
+        """
+        class Worker(QObject):
+            finished = pyqtSignal()
+            def __init__(self, server):
+                super().__init__()
+                self.server = server
+            def run(self):
+                data = self.server.check()
+                if len(data) <= 2:
+                    print("stopping")
+                    self.server.stopped()
+                    pass
+                else: 
+                    print("running?")
+                    s = self.server.cs.check_size(self.server.run_jobname)
+                    if self.server._logSize == s:
+                        self.server.stable()
+                    else:
+                        self.server.communicating()
+                    self.server._logSize = s
+                self.finished.emit()
+
+        def check_run():
+            #  self.check()
+            if len(data) <= 2:
+                self.stopped()
+                pass
+            else: 
+                #  self._logSize = -1
                 s = self.cs.check_size(self.run_jobname)
                 if self._logSize == s:
                     self.stable()
                 else:
                     self.communicating()
                 self._logSize = s
-            self._runTimer.timeout.connect(partial(check_size))
-        else:
-            self._runTimer.stop()
-            self._runTimer.timeout.disconnect()
-            pass
+            #  self.thread = QThread()
+            #  self.worker = Worker(self)
+            #  self.worker.moveToThread(self.thread)
+            #  self.thread.started.connect(self.worker.run)
+            #  self.worker.finished.connect(self.thread.quit)
+            #  self.thread.finished.connect(self.thread.deleteLater)
+            #  self.worker.finished.connect(self.worker.deleteLater)
+            #  self.thread.start()
+
+        #  class WorkingThread(QThread):
+            #  def __init__(self, server):
+                #  super().__init__()
+                #  self.server = server
+                #  self.moveToThread(self)
+                #  #  pass
+            #  def run(self, ):
+                #  timer = QTimer(self)
+                #  timer.setInterval(self.server._server_check_period)
+                #  timer.timeout.connect(partial(check_run))
+                #  timer.start()
+                #  pass
+
+
+        #  self._runTimer.timeout
+        #  self.thread = WorkingThread(self)
+        #  self.thread = QThread()
+        self._runTimer.setInterval(self._server_check_period)
+        self._runTimer.setSingleShot(True)
+        self._runTimer.timeout.connect(partial(self.check))
+        self._runTimer.start()
+        #  self._runTimer.moveToThread(self.thread)
+        #  self.thread.started.connect(self._runTimer.start)
+        #  self.thread.start()
+        #  self._runTimer.start(self._server_check_period)
+
+        #  if start == True:
+            #  self._logSize = -1
+            #  self._runTimer.start(self._server_check_period)
+            #  def check_size():
+                #  s = self.cs.check_size(self.run_jobname)
+                #  if self._logSize == s:
+                    #  self.stable()
+                #  else:
+                    #  self.communicating()
+                #  self._logSize = s
+            #  self._runTimer.timeout.connect(partial(check_size))
+        #  else:
+            #  self._runTimer.stop()
+            #  self._runTimer.timeout.disconnect()
+            #  pass
 
     @pyqtSlot()
     def read(self):
