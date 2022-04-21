@@ -11,7 +11,7 @@ class OpcScaServer(Server):
                 "true", # init server
                 f"{db.FLX_SETUP} && supervisorctl start {db.OPC_EXE}:opcserver-{port} ", # run server
                 f"""{db.FLX_SETUP} && {first_check_running}""", # check
-                f"{db.FLX_SETUP} && supervisorctl status && supervisorctl stop {db.OPC_EXE}:opcserver-{port}", # kill server
+                f"{db.FLX_SETUP} && supervisorctl stop {db.OPC_EXE}:opcserver-{port}", # kill server
                 )
         self._l_flx = []
         self.check_hold_command = f"""{db.FLX_SETUP} && {hang_running}"""
