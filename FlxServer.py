@@ -17,8 +17,8 @@ class FlxServer(Server):
                 f"{db.FLX_EXE}",
                 cmd,
                 f"{db.FLX_SETUP} && {db.FLX_EXE} {db.flx_arg[flx_host]}",
-                f"""ps aux | grep {db.FLX_EXE} | grep -v 'bash\|grep' """,
-                f"killall -9 {db.FLX_EXE}",
+                f"""ps aux | grep '{db.FLX_EXE}\|felix-tohost\|felix-toflx' | grep -v 'bash\|grep' """,
+                f"{db.FLX_SETUP} && supervisorctl stop all; killall -9 {db.FLX_EXE}",
                 )
         self._l_opc = set()
         self.init_jobname = f"init_{flx_host}"
