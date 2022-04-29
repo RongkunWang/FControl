@@ -265,7 +265,7 @@ class Server(QWidget):
                 if db.DEBUG:
                     print(self.hostname, data)
                 s = self.cs.check_size(self.run_jobname)
-                if self._logSize == s:
+                if self._logSize == s and "STARTING" not in data:
                     self.stable()
                 else:
                     self.communicating()
@@ -328,7 +328,7 @@ class Server(QWidget):
     def kill(self, ):
         kill_job_name = f"kill_{self.run_jobname}"
         job = self.cs.send_command(kill_job_name, kill_job_name, 
-                self.hostname, f"{self.kill_command} && echo $? && sleep 0.1", toFile = False)
+                self.hostname, f"{self.kill_command} && echo $? && sleep 0.1", toFile = True)
         job.waitForFinished(self._server_timeout)
         data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
         return bool(data[0])
@@ -501,11 +501,9 @@ class Server(QWidget):
             except TypeError:
                 print("exception when disconnect, continue")
 
-    def monitor(self, start = True):
+    def monitor(self):
         """
-        start monitor if start=True, else stop
-
-        do not use start now
+        monitor server status
         """
         class Worker(QObject):
             finished = pyqtSignal()
@@ -521,7 +519,7 @@ class Server(QWidget):
                 else: 
                     print("running?")
                     s = self.server.cs.check_size(self.server.run_jobname)
-                    if self.server._logSize == s:
+                    if self.server._logSize == s and "STARTING" not in data:
                         self.server.stable()
                     else:
                         self.server.communicating()
