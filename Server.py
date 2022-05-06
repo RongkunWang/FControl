@@ -329,9 +329,9 @@ class Server(QWidget):
         kill_job_name = f"kill_{self.run_jobname}"
         job = self.cs.send_command(kill_job_name, kill_job_name, 
                 self.hostname, f"{self.kill_command} && echo $? && sleep 0.1", toFile = True)
-        job.waitForFinished(self._server_timeout)
-        data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
-        return bool(data[0])
+        #  job.waitForFinished(self._server_timeout)
+        #  data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
+        #  return bool(data[0])
 
     def check_and_kill(self):
         data = self.check()
@@ -432,7 +432,7 @@ class Server(QWidget):
         """
         self.active_stop = True
         self.cs.stop_command(self.run_jobname)
-        state = self.kill()
+        self.kill()
         self.active_stop = False
         pass
 
