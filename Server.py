@@ -61,7 +61,7 @@ class Server(QWidget):
 
         # ms
         self._server_timeout      = 5000
-        self._server_check_period = 1
+        self._server_check_period = 3000
 
         self._fileLog = None 
         self._logSize = -1
@@ -254,7 +254,7 @@ class Server(QWidget):
         #  job.waitForFinished(self._server_timeout)
         def analyze(job):
             if not job:
-                self._runTimer.start()
+                #  self._runTimer.start()
                 return
             data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
             data = self.strip(data)
@@ -270,7 +270,7 @@ class Server(QWidget):
                 else:
                     self.communicating()
                 self._logSize = s
-            self._runTimer.start()
+            #  self._runTimer.start()
         job.finished.connect(partial(analyze, job))
 
     def strip(self, data):
@@ -422,6 +422,8 @@ class Server(QWidget):
 
         #  self.set_enable_state()
         #  self.monitor()
+        self._runTimer.setInterval(self._server_check_period)
+        self._runTimer.start()
 
         pass
 
@@ -434,6 +436,8 @@ class Server(QWidget):
         self.cs.stop_command(self.run_jobname)
         self.kill()
         self.active_stop = False
+        self._runTimer.setInterval(self._server_check_period * 2)
+        self._runTimer.start()
         pass
 
 
@@ -526,41 +530,6 @@ class Server(QWidget):
                     self.server._logSize = s
                 self.finished.emit()
 
-        def check_run():
-            #  self.check()
-            if len(data) <= 2:
-                self.stopped()
-                pass
-            else: 
-                #  self._logSize = -1
-                s = self.cs.check_size(self.run_jobname)
-                if self._logSize == s:
-                    self.stable()
-                else:
-                    self.communicating()
-                self._logSize = s
-            #  self.thread = QThread()
-            #  self.worker = Worker(self)
-            #  self.worker.moveToThread(self.thread)
-            #  self.thread.started.connect(self.worker.run)
-            #  self.worker.finished.connect(self.thread.quit)
-            #  self.thread.finished.connect(self.thread.deleteLater)
-            #  self.worker.finished.connect(self.worker.deleteLater)
-            #  self.thread.start()
-
-        #  class WorkingThread(QThread):
-            #  def __init__(self, server):
-                #  super().__init__()
-                #  self.server = server
-                #  self.moveToThread(self)
-                #  #  pass
-            #  def run(self, ):
-                #  timer = QTimer(self)
-                #  timer.setInterval(self.server._server_check_period)
-                #  timer.timeout.connect(partial(check_run))
-                #  timer.start()
-                #  pass
-
 
         #  self._runTimer.timeout
         #  self.thread = WorkingThread(self)
@@ -568,7 +537,8 @@ class Server(QWidget):
         self._runTimer.setInterval(self._server_check_period)
         self._runTimer.setSingleShot(True)
         self._runTimer.timeout.connect(partial(self.check))
-        self._runTimer.start()
+        #  self._runTimer.start()
+
         #  self._runTimer.moveToThread(self.thread)
         #  self.thread.started.connect(self._runTimer.start)
         #  self.thread.start()

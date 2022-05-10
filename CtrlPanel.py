@@ -93,6 +93,11 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.flx_init_type_list.append("supervisorctl start gbt:*")
         self.layout_main.addWidget(self.flx_init_type, 1, 0, 1, 1)
         
+        self.but_check_server = QPushButton("Check Server Status(manual now)")
+        self.but_check_server.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.layout_main.addWidget(self.but_check_server, 0, db.ncol - 2, 1, 1)
+
+        self.but_check_server.clicked.connect(partial(self.checkServer))
 
         self.but_clear_cache = QPushButton("Clear Cache(potentially large!)")
         self.but_clear_cache.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -261,6 +266,19 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             pass # opc
 
         self.set_cb_relationship()
+        pass
+
+    @QtCore.pyqtSlot()
+    def checkServer(self):
+        for server in self.return_list_opc().values(): 
+            server.check()
+        for server in self.return_list_flx().values(): 
+            server.check()
+        #  list(self.return_list_flx().items())
+        #  print(l_servers)
+        #  for server in l_servers:
+            #  server.check()
+            pass
         pass
 
     def set_cb_relationship(self,):
