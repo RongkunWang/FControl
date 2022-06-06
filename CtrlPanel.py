@@ -1,6 +1,9 @@
 from functools import partial
 import codecs
-import os
+import os, sys
+sys.path.insert(1, "/atlas-home/1/aawhite/this")
+import nsw_this
+print("Using convenience module:", nsw_this.__file__)
 
 from PyQt5 import QtCore
 from PyQt5 import QtGui
@@ -361,7 +364,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         marker = f"{self.det}-{self.sside}"
         if self.det == "TP":
             marker = "TP"
-        self._widLogGBTx = LogChecker(f"GBTx Alignment Checker {marker}")
+        self._widLogGBTx = LogChecker(f"GBTx Alignment Checker {marker}", self)
         self._gbtxCounter = 0
         for name, cb in self.l_flx_cb.items():
             if not cb.isChecked(): continue
@@ -371,6 +374,7 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             def stop_job(host, *args):
                 self._gbtxCounter -= 1
                 pass
+
 
             self.cs.send_command(f"gbt_check_{host}",
                     f"gbt_check_{host}",
@@ -388,6 +392,66 @@ class CtrlPanel(QWidget, OpcFlxRelation):
                 for name, cb in self.l_flx_cb.items():
                     if not cb.isChecked(): continue
                     host = self.return_list_flx()[name].hostname
+
+                    #  print(details, output)
+                    sector_str = []
+                    if self.det != "TP":
+                        for device in range(4):
+                            details = {
+                                "mode":"device",
+                                "host":host.split(".")[0],
+                                "deviceNumber":device,
+                                "detector":"mm",
+                                }
+                            if self.det == "sTGC":
+                                details["detector"] = "stgc"
+                            output = nsw_this.deviceTable(details)
+                            sector_l = []
+                            for outDic in output:
+                                sector_l.append( outDic["sector"] )
+                                pass
+                            sector_str.append( ",".join(sector_l) )
+                    elif "tp-a" in host:
+                        sector_str += [
+                                "STG A9-A16",
+                                "STG A1-A8",
+                                "MMG A9-A16",
+                                "MMG A1-A8",
+                                ]
+                    elif "tp-c" in host:
+                        sector_str += [
+                                "STG C9-C16",
+                                "STG C1-C8",
+                                "MMG C9-C16",
+                                "MMG C1-C8",
+                                ]
+                    linkMap = [
+                            {
+                                0:" [A10]",
+                                1:" [A12]",
+                                4:" [A14]",
+                                5:" [A16]",
+                                6:" [A9]",
+                                7:" [A11]",
+                                10:"[A13]",
+                                11:"[A15]",
+                                },
+                            {
+                                12:"[A2]",
+                                13:"[A4]",
+                                16:"[A6]",
+                                17:"[A8]",
+                                18:"[A1]",
+                                19:"[A3]",
+                                22:"[A5]",
+                                23:"[A7]",
+                                },
+                            ]
+                    if "tp-c" in host:
+                        for dic in linkMap:
+                            for key, sec in dic.items():
+                                dic[key] = sec.replace("A", "C")
+
                     self._widLogGBTx.textLog.append(f"Host is: {host}\n")
                     fileLog = QtCore.QFile(str(self.cs.full_log(f"gbt_check_{host}")))
                     fileLog.open(QtCore.QIODevice.ReadOnly)
@@ -401,12 +465,14 @@ class CtrlPanel(QWidget, OpcFlxRelation):
                         if "card type" in line.lower(): continue
                         if "firmw type" in line.lower(): continue
                         if "connection to " in line.lower(): continue
-                        if "channel | 12" in line.lower(): continue
+                        device = found * 2 - 2
+                        if "channel | 12" in line.lower(): 
+                            device += 1
                         if "------" in line.lower(): continue
                         if "link alignment status" in line.lower(): 
                             found += 1
                             self._widLogGBTx.textLog.insertPlainText(f"Link alignment status for card: {found-1}"\
-                                    f" (device {found * 2 - 2}, {found * 2 - 1})\n")
+                                    f" (device {found * 2 - 2}[{sector_str[found * 2 - 2]}], {found * 2 - 1}[{sector_str[found * 2 - 1]}])\n")
                             continue
                         if found == 0: continue
                         line = line.replace("NO",  "N")
@@ -419,14 +485,17 @@ class CtrlPanel(QWidget, OpcFlxRelation):
                                     self._widLogGBTx.textLog.insertPlainText(w)
                                 elif "Y" in w:
                                     self._widLogGBTx.textLog.setTextColor(QtCore.Qt.green)
-                                    self._widLogGBTx.textLog.insertPlainText("{0: <6}".format(w))
+                                    self._widLogGBTx.textLog.insertPlainText("{0: <11}".format(w))
                                     self._widLogGBTx.textLog.setTextColor(QtCore.Qt.black)
                                 elif "Err" in w:
                                     self._widLogGBTx.textLog.setTextColor(QtCore.Qt.red)
-                                    self._widLogGBTx.textLog.insertPlainText("{0: <6}".format(w))
+                                    self._widLogGBTx.textLog.insertPlainText("{0: <11}".format(w))
                                     self._widLogGBTx.textLog.setTextColor(QtCore.Qt.black)
                                 else:
-                                    self._widLogGBTx.textLog.insertPlainText("{0: <6}".format(w))
+                                    if self.det == "TP" and "channel" in line.lower() and int(w) in linkMap[device % 2]:
+                                        w += f"{linkMap[device % 2][int(w)]}"
+                                        pass
+                                    self._widLogGBTx.textLog.insertPlainText("{0: <11}".format(w))
                             self._widLogGBTx.textLog.insertPlainText("\n")
                         else:
                             self._widLogGBTx.textLog.append(line)
