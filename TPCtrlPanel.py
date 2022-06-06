@@ -95,7 +95,7 @@ class TPCtrlPanel(CtrlPanel):
 
 
         self.sel_sec_A = QPushButton("Select A sectors")
-        self.sel_sec_A.setEnabled(False)
+        #  self.sel_sec_A.setEnabled(False)
         self.sel_sec_A.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.sel_sec_A.clicked.connect(partial(self.resolve_sectors, "A"))
         self.layout_main2.addWidget(self.sel_sec_A, 0, 0, 1, 1)
@@ -105,7 +105,7 @@ class TPCtrlPanel(CtrlPanel):
         self.layout_main2.addWidget(self.label["A"], 0, 1, 1, 3)
 
         self.sel_sec_C = QPushButton("Select C sectors")
-        self.sel_sec_C.setEnabled(False)
+        #  self.sel_sec_C.setEnabled(False)
         self.sel_sec_C.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.sel_sec_C.clicked.connect(partial(self.resolve_sectors, "C"))
         self.layout_main2.addWidget(self.sel_sec_C, 0, 4, 1, 1)
@@ -158,7 +158,7 @@ class TPCtrlPanel(CtrlPanel):
         self.tech[side] = ret[1]
 
         flxserver = self.return_list_flx()[self.flx_host[side]]
-        opcserver = self.return_list_opc()[side]
+        #  opcserver = self.return_list_opc()[side]
 
         l_sec_str = " ".join([str(i) for i in self.enabled[side]])
 
@@ -168,9 +168,10 @@ class TPCtrlPanel(CtrlPanel):
         if len(l_sec_str) == 0:
             l_sec_str = [0]
         
+        print(f"{flxserver.original_init_command}")
         flxserver.init_command = f"{flxserver.original_init_command} && /atlas-home/1/rowang/NSW/elink/feconf.py -s {l_sec_str} -i -t {self.tech[side]}" 
         #  print(flxserver.init_command)
-        opcserver.run_command = f"{opcserver.original_init_command} && /atlas-home/1/rowang/NSW/opc/generate.py -s {l_sec_str} -S {side} -t {self.tech[side]} -o {db.opc_dict['TP'][side]} && {opcserver.original_run_command}" 
+        #  opcserver.run_command = f"{opcserver.original_init_command} && /atlas-home/1/rowang/NSW/opc/generate.py -s {l_sec_str} -S {side} -t {self.tech[side]} -o {db.opc_dict['TP'][side]} && {opcserver.original_run_command}" 
         #  print(opcserver.run_command)
         pass
     pass
