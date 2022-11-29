@@ -91,8 +91,8 @@ flx_dict["TP"]["MM-C"] = ["pc-tdq-flx-nsw-tp-c-00.cern.ch"]
 flx_dict["TP"]["sTGC-C"] = ["pc-tdq-flx-nsw-tp-c-00.cern.ch"]
 port_dict["TP"]["MM-A"] = "mmtp"
 port_dict["TP"]["MM-C"] = "mmtp"
-port_dict["TP"]["sTGC-A"] = "stgc"
-port_dict["TP"]["sTGC-C"] = "stgc"
+port_dict["TP"]["sTGC-A"] = "stgctp"
+port_dict["TP"]["sTGC-C"] = "stgctp"
 
 
 

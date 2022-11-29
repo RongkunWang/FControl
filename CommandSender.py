@@ -27,27 +27,32 @@ class CommandSender(QWidget, ):
     def full_log(self, name):
         return self.log_dir / name
 
-    def send_command(self, name, log_file, host, cmd, finish_func = None, state_changed_func = None, toFile = True, shell = True, quiet = False, thread = None):
+    def send_command(self, 
+            name, 
+            log_file, 
+            host, 
+            cmd, 
+            finish_func = None, 
+            state_changed_func = None, 
+            toFile = True, 
+            shell = True, 
+            quiet = False):
         if not quiet:
-            print("\nstarting command", name, cmd)
+            print("\nRunning command", name, cmd)
 
         self.d_log_file[name] = self.log_dir / log_file
 
-        #  CMD = f"ssh -o StrictHostKeyChecking=no -t {host} \"stty isig intr ^N -echoctl ; trap '/bin/true' SIGINT; trap '/bin/true' SIGQUIT; {cmd}\""
-        CMD = f"""ssh -o StrictHostKeyChecking=no {"-t -t" if shell else ""} {host} '{cmd}' """
+        CMD = f"{cmd}"
+        if host != None:
+            CMD = f"""ssh -o StrictHostKeyChecking=no {"-t -t" if shell else ""} {host} '{cmd}' """
         if not quiet:
             print(CMD)
 
         # QProcess
         job = QProcess()
-        if thread:
-            #  job.moveToThread(thread)
-            pass
         job.setProcessChannelMode( QProcess.MergedChannels ) 
         if toFile:
             job.setStandardOutputFile( str(self.d_log_file[name]), QIODevice.Truncate | QIODevice.ReadWrite )
-        #  job.setProgram(CMD)
-        #  job.start(QIODevice.ReadWrite)
         job.start("bash", ["-c", CMD]) # huge improvement
 
         def finish_action(*args):

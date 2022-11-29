@@ -69,7 +69,7 @@ class TPCtrlPanel(CtrlPanel):
             pass
 
         def setTwoButtons(self):
-            cb1 = QPushButton("OK")
+            cb1 = QPushButton("Send Config")
             cb2 = QPushButton("Cancel")
             self.layout.addWidget(cb1, 4, 0, 1, 4)
             self.layout.addWidget(cb2, 4, 4, 1, 4)
@@ -140,7 +140,7 @@ class TPCtrlPanel(CtrlPanel):
 
         self.layout_main2.addLayout(self.layout_main, 2, 0, 1, db.ncol)
 
-        super().__init__(*args)
+        super().__init__(*args, isTP = True)
 
         pass
 
@@ -168,10 +168,25 @@ class TPCtrlPanel(CtrlPanel):
         if len(l_sec_str) == 0:
             l_sec_str = [0]
         
-        print(f"{flxserver.original_init_command}")
-        flxserver.init_command = f"{flxserver.original_init_command} && /atlas-home/1/rowang/NSW/elink/feconf.py -s {l_sec_str} -i -t {self.tech[side]}" 
+        #  print(f"{flxserver.original_init_command}")
+        #  flxserver.init_command = f"{flxserver.original_init_command}" 
+
+        print(l_sec_str)
+        self.cs.send_command(f"select_sector_tp-{side}",
+                f"select_sector_tp-{side}",
+                flxserver.host,
+                f"{db.FLX_SETUP} && /atlas-home/1/rowang/NSW/elink/feconf.py -s {l_sec_str} -t {self.tech[side]}")
+
         #  print(flxserver.init_command)
         #  opcserver.run_command = f"{opcserver.original_init_command} && /atlas-home/1/rowang/NSW/opc/generate.py -s {l_sec_str} -S {side} -t {self.tech[side]} -o {db.opc_dict['TP'][side]} && {opcserver.original_run_command}" 
         #  print(opcserver.run_command)
         pass
+
+    def init_modified(self, server):
+        """
+        overwrite
+        """
+        server.init()
+
+
     pass
