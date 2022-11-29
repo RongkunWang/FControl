@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
         #  self.tabs.setTabShape(QTabWidget.Triangular)
         self.setCentralWidget(self.tabs)
 
-        #  self.tabs.set
+        print("Initializing the FControl with a complete check of all servers, this might take a while.")
 
         self.MMA = CtrlPanel(self,)
         self.MMA.serverStatus.connect(partial(self.update_server_status))
@@ -90,6 +90,8 @@ class MainWindow(QMainWindow):
         self.TP = TPCtrlPanel(self, "TP", 3, False)
         self.TP.serverStatus.connect(partial(self.update_server_status))
         self.tabs.addTab(self.TP, "TP")
+
+        self.tabs.setCurrentIndex(4)
 
         self.show()
         pass

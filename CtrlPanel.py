@@ -23,10 +23,12 @@ class CtrlPanel(QWidget, OpcFlxRelation):
     # communicating 2
     # fatal 3
     serverStatus = QtCore.pyqtSignal(int)
-    def __init__(self, parent, det = "MM", side = 1, do_mainlayout = True):
+    def __init__(self, parent, det = "MM", side = 1, do_mainlayout = True, 
+            isTP = False):
         self.parent = parent
         self.det = det
         self.side = side
+        self.isTP = isTP
 
         self.sside = "C" if (side == 2) else "A"
         if do_mainlayout:
@@ -88,13 +90,14 @@ class CtrlPanel(QWidget, OpcFlxRelation):
         self.but_restart_failed.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.layout_main.addWidget(self.but_restart_failed, 0, 2, 1, 1)
 
-        self.flx_init_type = QComboBox()
-        self.flx_init_type_list = []
-        self.flx_init_type.addItem("init flx: sca_only")
-        self.flx_init_type_list.append("supervisorctl start sca_only:*")
-        self.flx_init_type.addItem("init flx: gbt")
-        self.flx_init_type_list.append("supervisorctl start gbt:*")
-        self.layout_main.addWidget(self.flx_init_type, 1, 0, 1, 1)
+        if not self.isTP:
+            self.flx_init_type = QComboBox()
+            self.flx_init_type_list = []
+            self.flx_init_type.addItem("init flx: sca_only")
+            self.flx_init_type_list.append("supervisorctl start sca_only:*")
+            self.flx_init_type.addItem("init flx: gbt")
+            self.flx_init_type_list.append("supervisorctl start gbt:*")
+            self.layout_main.addWidget(self.flx_init_type, 1, 0, 1, 1)
         
         self.but_check_server = QPushButton("Check Server Status(manual now)")
         self.but_check_server.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -269,18 +272,15 @@ class CtrlPanel(QWidget, OpcFlxRelation):
             pass # opc
 
         self.set_cb_relationship()
+        self.checkServer(True)
         pass
 
     @QtCore.pyqtSlot()
-    def checkServer(self):
+    def checkServer(self, quiet = False):
         for server in self.return_list_opc().values(): 
-            server.check()
+            server.check(quiet)
         for server in self.return_list_flx().values(): 
-            server.check()
-        #  list(self.return_list_flx().items())
-        #  print(l_servers)
-        #  for server in l_servers:
-            #  server.check()
+            server.check(quiet)
             pass
         pass
 

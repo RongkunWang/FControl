@@ -29,7 +29,8 @@ class Server(QWidget):
             init_server_command,
             run_server_command,
             check_running_command,
-            kill_cmd
+            kill_cmd,
+            is_multivisor = False
             ):
 
         QWidget.__init__(self)
@@ -46,8 +47,11 @@ class Server(QWidget):
         self._check_running_command = check_running_command
         self._kill_command = kill_cmd
 
+        self._is_multivisor = is_multivisor
 
-        self._check_hold_command = "true"
+
+        # TODO use case unclear
+        #  self._check_hold_command = "true"
 
         self.last_cmd = "run"
         #  self.log_name = self.run_jobname
@@ -103,12 +107,13 @@ class Server(QWidget):
     def init_command(self, name):
         self._init_command = name
 
-    @property
-    def check_hold_command(self):
-        return self._check_hold_command
-    @check_hold_command.setter
-    def check_hold_command(self, name):
-        self._check_hold_command = name
+    # TODO use case unclear
+    #  @property
+    #  def check_hold_command(self):
+        #  return self._check_hold_command
+    #  @check_hold_command.setter
+    #  def check_hold_command(self, name):
+        #  self._check_hold_command = name
 
 
     @property
@@ -197,19 +202,16 @@ class Server(QWidget):
 
     # supervisord utility return a string to do while loop checking and keep 
     def check_state(self, cmd, state, filter = ""):
-        return f"""supervisorctl status {cmd} | grep "{state}" | grep "{filter}" """
+        return f"""(echo "Yes" | felix-multivisor status {cmd} 2>&1) | grep "{state}" | grep "{filter}" """
 
-    #  def all_not(self, cmd, state, filter = ""):
+
+    # TODO use case unclear
+    #  def hang_until_all_not(self, cmd, state, filter = ""):
         #  # if all of the server not in state, quit
-        #  return f"""{self.check_state(cmd, state, filter)}"""
-
-    def hang_until_all_not(self, cmd, state, filter = ""):
-        # if all of the server not in state, quit
-        return f"""while true; do  sleep 1; out=`{self.check_state(cmd, state, filter)}`; if [[ $out == "" ]]; then break; fi; done """
-
-    def hang_until_one_not(self, cmd, state, filter = ""):
-        # if any of the server is not in state, quit
-        return f"""while true; do  sleep 1; n1=`supervisorctl status {cmd} | grep "{filter}" | wc -l`; n2=`supervisorctl status {cmd} | grep "{state}" | grep "{filter}" | wc -l`;  if [[ $n1 != $n2 ]]; then supervisorctl status {cmd} | grep "{state}" | grep "{filter}"; break; fi; done """
+        #  return f"""while true; do  sleep 1; out=`{self.check_state(cmd, state, filter)}`; if [[ $out == "" ]]; then break; fi; done """
+    #  def hang_until_one_not(self, cmd, state, filter = ""):
+        #  # if any of the server is not in state, quit
+        #  return f"""while true; do  sleep 1; n1=`supervisorctl status {cmd} | grep "{filter}" | wc -l`; n2=`supervisorctl status {cmd} | grep "{state}" | grep "{filter}" | wc -l`;  if [[ $n1 != $n2 ]]; then supervisorctl status {cmd} | grep "{state}" | grep "{filter}"; break; fi; done """
 
     # functionality
     def set_enable_state(self, force_disable = False):
@@ -237,19 +239,23 @@ class Server(QWidget):
             #  self.NotRunning()
             self.serverStatus.emit(0)
         self.last_cmd = "init"
-        self.cs.send_command(self.init_jobname, 
+        self.cs.send_command(
                 self.init_jobname, 
-                self.hostname,
+                self.init_jobname, 
+                None if self._is_multivisor else self.hostname,
                 self.init_command,
                 partial(stop_job))
         self.set_enable_state()
         self.stable(self.init_ind)
         pass
 
-    def check(self, ):
+    def check(self, quiet = False):
         check_job_name = f"check_{self.run_jobname}"
-        job = self.cs.send_command(check_job_name, check_job_name,
-                self.hostname, self.check_running_command, toFile = False, quiet = True, thread = self.thread)
+        job = self.cs.send_command(
+                check_job_name, check_job_name,
+                None if self._is_multivisor else self.hostname,
+                self.check_running_command, toFile = False, quiet = quiet)
+
         # TODO: make asynchronous??
         #  job.waitForFinished(self._server_timeout)
         def analyze(job):
@@ -327,8 +333,10 @@ class Server(QWidget):
 
     def kill(self, ):
         kill_job_name = f"kill_{self.run_jobname}"
-        job = self.cs.send_command(kill_job_name, kill_job_name, 
-                self.hostname, f"{self.kill_command} && echo $? && sleep 0.1", toFile = True)
+        job = self.cs.send_command(
+                kill_job_name, kill_job_name, 
+                self.hostname, 
+                f"{self.kill_command} && echo $? && sleep 0.1", toFile = True)
         #  job.waitForFinished(self._server_timeout)
         #  data = codecs.decode(job.readAllStandardOutput(), "utf-8").split("\n")
         #  return bool(data[0])
@@ -415,7 +423,8 @@ class Server(QWidget):
         self.last_cmd = "run"
         self.cs.send_command(self.run_jobname, 
                 self.run_jobname, 
-                self.hostname, self.run_command,
+                None if self._is_multivisor else self.hostname,
+                self.run_command,
                 partial(stop_job))
         #  self._fileMon = QFile(str(self.cs.full_log(self.run_jobname)))
         #  self._fileMon.open(QIODevice.ReadOnly)
